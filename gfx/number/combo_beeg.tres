@@ -1,0 +1,7 @@
+[gd_resource type="FontVariation" load_steps=2 format=3 uid="uid://bv6i16m8ttto0"]
+
+[ext_resource type="FontFile" uid="uid://dnxp1x6uk3p26" path="res://gfx/number/Combo_Big.png" id="1_gwiit"]
+
+[resource]
+base_font = ExtResource("1_gwiit")
+spacing_glyph = -2

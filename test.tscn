@@ -1,0 +1,240 @@
+[gd_scene load_steps=23 format=3 uid="uid://c3w8ntkdmxu5g"]
+
+[ext_resource type="Script" path="res://test.gd" id="1_vmat6"]
+[ext_resource type="AudioStream" uid="uid://2mhf4s1a821v" path="res://snd/dong.wav" id="2_bo5mj"]
+[ext_resource type="AudioStream" uid="uid://btg723iy2xxyw" path="res://snd/ka.wav" id="3_rq33v"]
+[ext_resource type="Texture2D" uid="uid://dyn73x0ysqmld" path="res://gfx/bg/bg_2_p1.png" id="4_1bnh1"]
+[ext_resource type="Script" path="res://scripts/notedrawer.gd" id="4_jy0uu"]
+[ext_resource type="Texture2D" uid="uid://cx6lsmn8v4frb" path="res://gfx/sfield_bg.png" id="4_lhsr2"]
+[ext_resource type="Texture2D" uid="uid://c1csnaawymhuw" path="res://gfx/taiko_p1.png" id="5_g22lj"]
+[ext_resource type="Texture2D" uid="uid://b1chbboi8t381" path="res://gfx/judge_point.png" id="7_yd7hd"]
+[ext_resource type="Texture2D" uid="uid://01wm28wcu5pq" path="res://gfx/taiko/taiko_blue_1.png" id="8_a67m2"]
+[ext_resource type="Texture2D" uid="uid://bunwryhntw15g" path="res://gfx/taiko/taiko_blue_2.png" id="9_uxirg"]
+[ext_resource type="Texture2D" uid="uid://bsqgsh4ld030u" path="res://gfx/taiko/taiko_red_1.png" id="10_sptmg"]
+[ext_resource type="Texture2D" uid="uid://cjyofe7hwbe88" path="res://gfx/taiko/taiko_red_2.png" id="11_n55oy"]
+[ext_resource type="FontVariation" uid="uid://b7ivtij2wrbmp" path="res://gfx/number/combo_normal.tres" id="12_j8pt1"]
+[ext_resource type="Texture2D" uid="uid://dktk4julnybtx" path="res://gfx/taiko/flower_m.png" id="14_rtdta"]
+[ext_resource type="Script" path="res://scripts/chara.gd" id="15_cnrta"]
+[ext_resource type="Texture2D" uid="uid://im0dpd6qimgt" path="res://gfx/sfield/sfield_blue.png" id="15_ky7p5"]
+[ext_resource type="Texture2D" uid="uid://b3n4es8jv4yi4" path="res://gfx/sfield/sfield_red.png" id="16_bskvt"]
+[ext_resource type="Texture2D" uid="uid://erhqkb3pfwyc" path="res://gfx/chara/idle.png" id="16_xett1"]
+[ext_resource type="Texture2D" uid="uid://clxvt44rxjn7y" path="res://gfx/chara/gogo.png" id="17_q4q7y"]
+[ext_resource type="Texture2D" uid="uid://b7d2tmxd3a3d1" path="res://gfx/sfield/sfield_hit.png" id="17_tmiq1"]
+[ext_resource type="Texture2D" uid="uid://bh6n8w3eboems" path="res://gfx/gauge/soulgauge_hard_p1_1.png" id="18_rd6ji"]
+
+[sub_resource type="Curve2D" id="Curve2D_pjfov"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 148, 164, -130.727, 35.0099, 130.727, -35.0099, 394, 31, 0, 0, 0, 0, 604, 40)
+}
+point_count = 3
+
+[node name="Control" type="Node2D"]
+script = ExtResource("1_vmat6")
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
+
+[node name="Label" type="Label" parent="."]
+offset_right = 256.0
+offset_bottom = 64.0
+
+[node name="Don" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("2_bo5mj")
+max_polyphony = 100
+
+[node name="Kat" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("3_rq33v")
+max_polyphony = 100
+
+[node name="Label2" type="Label" parent="."]
+offset_top = 384.0
+offset_right = 256.0
+offset_bottom = 448.0
+text = "BPM:"
+
+[node name="Label9" type="Label" parent="."]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = 512.0
+offset_right = 640.0
+offset_bottom = 64.0
+grow_horizontal = 0
+size_flags_horizontal = 8
+theme_override_fonts/font = ExtResource("12_j8pt1")
+horizontal_alignment = 2
+
+[node name="Label7" type="Label" parent="."]
+offset_left = 1.0
+offset_top = 341.0
+offset_right = 257.0
+offset_bottom = 405.0
+text = "Title:"
+
+[node name="Label8" type="Label" parent="."]
+offset_top = 363.0
+offset_right = 256.0
+offset_bottom = 387.0
+text = "Subtitle:"
+
+[node name="Label3" type="Label" parent="."]
+offset_top = 408.0
+offset_right = 256.0
+offset_bottom = 472.0
+text = "TimeSig:"
+
+[node name="Label4" type="Label" parent="."]
+offset_top = 432.0
+offset_right = 256.0
+offset_bottom = 496.0
+text = "Scroll X:"
+
+[node name="Label5" type="Label" parent="."]
+offset_left = 1.0
+offset_top = 461.0
+offset_right = 257.0
+offset_bottom = 525.0
+text = "Scroll Y: 1.0"
+
+[node name="Parallax2D" type="Parallax2D" parent="."]
+z_index = -2048
+repeat_size = Vector2(768, 0)
+autoscroll = Vector2(-32, 0)
+
+[node name="Sprite2D" type="Sprite2D" parent="Parallax2D"]
+texture = ExtResource("4_1bnh1")
+centered = false
+
+[node name="Judgement" type="Sprite2D" parent="."]
+z_index = -257
+texture_filter = 1
+position = Vector2(108, 133)
+texture = ExtResource("4_lhsr2")
+centered = false
+offset = Vector2(0, -16)
+
+[node name="JudgePoint" type="Sprite2D" parent="."]
+z_index = -2
+texture_filter = 1
+position = Vector2(148, 180)
+texture = ExtResource("7_yd7hd")
+offset = Vector2(0, -16)
+
+[node name="Notes" type="Node2D" parent="."]
+script = ExtResource("4_jy0uu")
+
+[node name="Taiko" type="Sprite2D" parent="."]
+texture_filter = 1
+position = Vector2(-11, 128)
+texture = ExtResource("5_g22lj")
+centered = false
+offset = Vector2(0, -16)
+metadata/_edit_lock_ = true
+
+[node name="KaLeft" type="Sprite2D" parent="Taiko"]
+texture = ExtResource("8_a67m2")
+centered = false
+offset = Vector2(0, -16)
+
+[node name="KaRight" type="Sprite2D" parent="Taiko"]
+texture = ExtResource("9_uxirg")
+centered = false
+offset = Vector2(0, -16)
+
+[node name="DonLeft" type="Sprite2D" parent="Taiko"]
+texture = ExtResource("10_sptmg")
+centered = false
+offset = Vector2(0, -16)
+
+[node name="DonRight" type="Sprite2D" parent="Taiko"]
+texture = ExtResource("11_n55oy")
+centered = false
+offset = Vector2(0, -16)
+
+[node name="Control" type="Control" parent="Taiko"]
+visible = false
+layout_mode = 3
+anchor_left = 0.508
+anchor_top = 0.469
+anchor_right = 0.508
+anchor_bottom = 0.469
+offset_left = -57.024
+offset_top = -44.032
+offset_right = 55.976
+offset_bottom = -12.032
+
+[node name="Combo" type="Label" parent="Taiko/Control"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -43.0
+offset_top = -23.0
+offset_right = 45.0
+grow_horizontal = 2
+grow_vertical = 0
+scale = Vector2(2.5, 2.5)
+pivot_offset = Vector2(44, 23)
+theme_override_fonts/font = ExtResource("12_j8pt1")
+text = "1000"
+horizontal_alignment = 1
+vertical_alignment = 2
+
+[node name="ComboText" type="TextureRect" parent="Taiko/Control"]
+layout_mode = 0
+offset_left = -3.0
+offset_top = -43.0
+offset_right = 117.0
+offset_bottom = 77.0
+texture = ExtResource("14_rtdta")
+metadata/_edit_lock_ = true
+
+[node name="SFieldEffects" type="Node2D" parent="Taiko"]
+z_index = -256
+
+[node name="SfieldBlue" type="Sprite2D" parent="Taiko/SFieldEffects"]
+modulate = Color(1, 1, 1, 0)
+position = Vector2(118, 15)
+texture = ExtResource("15_ky7p5")
+centered = false
+offset = Vector2(0, -16)
+
+[node name="SfieldRed" type="Sprite2D" parent="Taiko/SFieldEffects"]
+modulate = Color(1, 1, 1, 0)
+position = Vector2(118, 15)
+texture = ExtResource("16_bskvt")
+centered = false
+offset = Vector2(0, -16)
+
+[node name="SfieldHit" type="Sprite2D" parent="Taiko/SFieldEffects"]
+modulate = Color(1, 1, 1, 0)
+position = Vector2(118, 15)
+texture = ExtResource("17_tmiq1")
+centered = false
+offset = Vector2(0, -16)
+
+[node name="Timer" type="Timer" parent="."]
+wait_time = 1.5
+one_shot = true
+
+[node name="Chara" type="Sprite2D" parent="."]
+z_index = -2048
+position = Vector2(96, 72)
+texture = ExtResource("17_q4q7y")
+hframes = 4
+script = ExtResource("15_cnrta")
+idle_sprite = ExtResource("16_xett1")
+gogo_sprite = ExtResource("17_q4q7y")
+idle_frames = 2
+
+[node name="SoulgaugeHardP11" type="Sprite2D" parent="."]
+position = Vector2(272, 24)
+texture = ExtResource("18_rd6ji")
+centered = false
+offset = Vector2(0, -16)
+
+[node name="BaseSoulCurve" type="Path2D" parent="."]
+curve = SubResource("Curve2D_pjfov")
+
+[connection signal="timeout" from="Timer" to="." method="_on_timer_timeout"]

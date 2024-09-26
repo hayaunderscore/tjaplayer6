@@ -1,0 +1,7 @@
+[gd_resource type="FontVariation" load_steps=2 format=3 uid="uid://duf7x2m8ex0j0"]
+
+[ext_resource type="FontFile" uid="uid://b8y8ia0d7d8yv" path="res://gfx/number/Combo_Midium.png" id="1_eck51"]
+
+[resource]
+base_font = ExtResource("1_eck51")
+spacing_glyph = -2

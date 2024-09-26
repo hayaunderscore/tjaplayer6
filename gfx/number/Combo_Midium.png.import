@@ -1,0 +1,25 @@
+[remap]
+
+importer="font_data_image"
+type="FontFile"
+uid="uid://b8y8ia0d7d8yv"
+path="res://.godot/imported/Combo_Midium.png-a4a29e035ea3991b4f35375f29fb8034.fontdata"
+
+[deps]
+
+source_file="res://gfx/number/Combo_Midium.png"
+dest_files=["res://.godot/imported/Combo_Midium.png-a4a29e035ea3991b4f35375f29fb8034.fontdata"]
+
+[params]
+
+character_ranges=PackedStringArray("48-57", "")
+kerning_pairs=PackedStringArray()
+columns=10
+rows=1
+image_margin=Rect2i(0, 0, 0, 0)
+character_margin=Rect2i(0, 0, 0, 0)
+ascent=0
+descent=0
+fallbacks=[]
+compress=true
+scaling_mode=2
