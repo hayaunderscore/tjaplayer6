@@ -36,11 +36,16 @@ var bar_line: Texture2D = preload("res://gfx/notes/line.png")
 func get_note_position(ms, pixels_per_frame):
 	return int((640) + pixels_per_frame * 60 * (ms - time))
 
+var last_beat: float = 0
+
+func get_hb_note_pos_x(time, speed, beat):
+	return (speed * (530 / 4)) * (beat - (last_beat / 60 / cur_bpm))
+
 func get_note_position_y(ms, pixels_per_frame):
 	return int((480) + pixels_per_frame * 60 * (ms - time))
 
 const scrolly_conv: float = 0.6366197723695659
-var cur_bpm: float = 1.0
+var cur_bpm: float = 0.0
 
 func _draw() -> void:
 	for i in range(0, bar_list.size(), 1):
@@ -109,4 +114,6 @@ func _draw() -> void:
 					false, col)
 
 func _process(delta: float) -> void:
+	if time > last_beat + (60 / cur_bpm):
+		last_beat = time
 	queue_redraw()
