@@ -1,0 +1,175 @@
+[gd_scene load_steps=25 format=3 uid="uid://cqrjctcrfhnv"]
+
+[ext_resource type="Script" path="res://game.gd" id="1_kakou"]
+[ext_resource type="AudioStream" uid="uid://2mhf4s1a821v" path="res://snd/dong.wav" id="2_3pvjb"]
+[ext_resource type="AudioStream" uid="uid://btg723iy2xxyw" path="res://snd/ka.wav" id="3_6stb0"]
+[ext_resource type="FontVariation" uid="uid://b7ivtij2wrbmp" path="res://gfx/number/combo_normal.tres" id="4_6vo0a"]
+[ext_resource type="Texture2D" uid="uid://dyn73x0ysqmld" path="res://gfx/bg/bg_2_p1.png" id="5_rj1pq"]
+[ext_resource type="Texture2D" uid="uid://cx6lsmn8v4frb" path="res://gfx/sfield_bg.png" id="6_68ysk"]
+[ext_resource type="Texture2D" uid="uid://b1chbboi8t381" path="res://gfx/judge_point.png" id="7_ahv1k"]
+[ext_resource type="Script" path="res://scripts/taiko.gd" id="7_x46aq"]
+[ext_resource type="Script" path="res://scripts/notedrawer.gd" id="8_fpb7v"]
+[ext_resource type="Texture2D" uid="uid://c1csnaawymhuw" path="res://gfx/taiko_p1.png" id="9_1vshb"]
+[ext_resource type="Texture2D" uid="uid://01wm28wcu5pq" path="res://gfx/taiko/taiko_blue_1.png" id="10_fspe7"]
+[ext_resource type="Texture2D" uid="uid://bunwryhntw15g" path="res://gfx/taiko/taiko_blue_2.png" id="11_3qaj2"]
+[ext_resource type="Texture2D" uid="uid://bsqgsh4ld030u" path="res://gfx/taiko/taiko_red_1.png" id="12_irpdy"]
+[ext_resource type="Texture2D" uid="uid://cjyofe7hwbe88" path="res://gfx/taiko/taiko_red_2.png" id="13_h7s5l"]
+[ext_resource type="Texture2D" uid="uid://68s22crcuj6s" path="res://gfx/taiko/flower.png" id="14_kjxqs"]
+[ext_resource type="Texture2D" uid="uid://dktk4julnybtx" path="res://gfx/taiko/flower_m.png" id="16_g6ygr"]
+[ext_resource type="Texture2D" uid="uid://im0dpd6qimgt" path="res://gfx/sfield/sfield_blue.png" id="17_qjmdc"]
+[ext_resource type="Texture2D" uid="uid://b3n4es8jv4yi4" path="res://gfx/sfield/sfield_red.png" id="18_lo0vq"]
+[ext_resource type="Texture2D" uid="uid://b7d2tmxd3a3d1" path="res://gfx/sfield/sfield_hit.png" id="19_esi5k"]
+[ext_resource type="Texture2D" uid="uid://clxvt44rxjn7y" path="res://gfx/chara/gogo.png" id="20_5ys4s"]
+[ext_resource type="Script" path="res://scripts/chara.gd" id="21_burjm"]
+[ext_resource type="Texture2D" uid="uid://erhqkb3pfwyc" path="res://gfx/chara/idle.png" id="22_vk86d"]
+[ext_resource type="Texture2D" uid="uid://bh6n8w3eboems" path="res://gfx/gauge/soulgauge_hard_p1_1.png" id="23_sikdf"]
+
+[sub_resource type="Curve2D" id="Curve2D_pjfov"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 148, 164, -130.727, 35.0099, 130.727, -35.0099, 394, 31, 0, 0, 0, 0, 604, 40)
+}
+point_count = 3
+
+[node name="Game" type="Node2D"]
+script = ExtResource("1_kakou")
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
+
+[node name="Parallax2D" type="Parallax2D" parent="."]
+z_index = -2048
+repeat_size = Vector2(768, 0)
+autoscroll = Vector2(-32, 0)
+
+[node name="Sprite2D" type="Sprite2D" parent="Parallax2D"]
+texture = ExtResource("5_rj1pq")
+centered = false
+
+[node name="Judgement" type="Sprite2D" parent="."]
+z_index = -257
+texture_filter = 1
+position = Vector2(108, 133)
+texture = ExtResource("6_68ysk")
+centered = false
+offset = Vector2(0, -16)
+
+[node name="JudgePoint" type="Sprite2D" parent="."]
+z_index = -2
+texture_filter = 1
+position = Vector2(148, 164)
+texture = ExtResource("7_ahv1k")
+
+[node name="Notes" type="Node2D" parent="."]
+script = ExtResource("8_fpb7v")
+
+[node name="Taiko" type="Sprite2D" parent="."]
+texture_filter = 1
+position = Vector2(-11, 128)
+texture = ExtResource("9_1vshb")
+centered = false
+offset = Vector2(0, -16)
+script = ExtResource("7_x46aq")
+
+[node name="KaLeft" type="Sprite2D" parent="Taiko"]
+texture = ExtResource("10_fspe7")
+centered = false
+offset = Vector2(0, -16)
+
+[node name="KaRight" type="Sprite2D" parent="Taiko"]
+texture = ExtResource("11_3qaj2")
+centered = false
+offset = Vector2(0, -16)
+
+[node name="DonLeft" type="Sprite2D" parent="Taiko"]
+texture = ExtResource("12_irpdy")
+centered = false
+offset = Vector2(0, -16)
+
+[node name="DonRight" type="Sprite2D" parent="Taiko"]
+texture = ExtResource("13_h7s5l")
+centered = false
+offset = Vector2(0, -16)
+
+[node name="SFieldEffects" type="Node2D" parent="Taiko"]
+z_index = -256
+
+[node name="SfieldBlue" type="Sprite2D" parent="Taiko/SFieldEffects"]
+modulate = Color(1, 1, 1, 0)
+position = Vector2(118, 15)
+texture = ExtResource("17_qjmdc")
+centered = false
+offset = Vector2(0, -16)
+
+[node name="SfieldRed" type="Sprite2D" parent="Taiko/SFieldEffects"]
+modulate = Color(1, 1, 1, 0)
+position = Vector2(118, 15)
+texture = ExtResource("18_lo0vq")
+centered = false
+offset = Vector2(0, -16)
+
+[node name="SfieldHit" type="Sprite2D" parent="Taiko/SFieldEffects"]
+modulate = Color(1, 1, 1, 0)
+position = Vector2(118, 15)
+texture = ExtResource("19_esi5k")
+centered = false
+offset = Vector2(0, -16)
+
+[node name="Combo" type="Node2D" parent="Taiko"]
+
+[node name="Flower" type="Sprite2D" parent="Taiko/Combo"]
+position = Vector2(66, 42)
+scale = Vector2(1e-05, 1e-05)
+texture = ExtResource("14_kjxqs")
+
+[node name="ComboM" type="Sprite2D" parent="Taiko/Combo"]
+position = Vector2(4, -23)
+texture = ExtResource("16_g6ygr")
+centered = false
+
+[node name="ComboText" type="Label" parent="Taiko/Combo"]
+texture_filter = 1
+offset_left = -29.0
+offset_top = 6.0
+offset_right = 159.0
+offset_bottom = 54.0
+pivot_offset = Vector2(94, 48)
+theme_override_fonts/font = ExtResource("4_6vo0a")
+text = "000"
+horizontal_alignment = 1
+vertical_alignment = 2
+
+[node name="AudioKaLeft" type="AudioStreamPlayer" parent="Taiko"]
+stream = ExtResource("3_6stb0")
+
+[node name="AudioKaRight" type="AudioStreamPlayer" parent="Taiko"]
+stream = ExtResource("3_6stb0")
+
+[node name="AudioDonLeft" type="AudioStreamPlayer" parent="Taiko"]
+stream = ExtResource("2_3pvjb")
+
+[node name="AudioDonRight" type="AudioStreamPlayer" parent="Taiko"]
+stream = ExtResource("2_3pvjb")
+
+[node name="Timer" type="Timer" parent="."]
+wait_time = 1.5
+one_shot = true
+
+[node name="Chara" type="Sprite2D" parent="."]
+z_index = -2048
+position = Vector2(96, 72)
+texture = ExtResource("20_5ys4s")
+hframes = 4
+script = ExtResource("21_burjm")
+idle_sprite = ExtResource("22_vk86d")
+gogo_sprite = ExtResource("20_5ys4s")
+idle_frames = 2
+
+[node name="Soulgauge" type="Sprite2D" parent="."]
+position = Vector2(272, 24)
+texture = ExtResource("23_sikdf")
+centered = false
+offset = Vector2(0, -16)
+
+[node name="BaseSoulCurve" type="Path2D" parent="."]
+curve = SubResource("Curve2D_pjfov")
+
+[connection signal="timeout" from="Timer" to="." method="preamble_timeout"]

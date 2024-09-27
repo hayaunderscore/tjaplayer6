@@ -192,6 +192,8 @@ func _process(delta: float) -> void:
 					combo_text.set("theme_override_fonts/font", combo_fonts[1])
 				else:
 					combo_text.set("theme_override_fonts/font", combo_fonts[2])
+				if (combo % 100 == 0) and combo >= 100:
+					$Taiko/Control/ComboFlower.show_flower()
 				var dr = note_draw_list.find(note)
 				if dr != -1 and note["note"] < 5: 
 					if $Notes.note_sprites[note["note"]] != null:

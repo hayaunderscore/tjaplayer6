@@ -180,7 +180,6 @@ func parse_tja(path: String):
 							barlines = false
 						elif l.begins_with("#BARLINEON"):
 							barlines = true
-							print("turned on")
 						var command_value := _find_value(line, "#BPMCHANGE")
 						if command_value:
 							cur_bpm = float(command_value)
@@ -221,34 +220,38 @@ func parse_tja(path: String):
 					for idx in line.trim_suffix(","):
 						var n = int(idx)
 						if n > 0:
-							var bpm: float = cur_bpm
-							if bemani_scroll: bpm = tjaf.start_bpm
-							var px_perframe: float = get_pixels_per_frame(bpm * (cur_meter / 4) * cur_scroll, 60, cur_meter, screen_distance)
-							var load_ms: float = time - (screen_distance / px_perframe / 60)
-							var px_perframe_y: float = get_pixels_per_frame(bpm * (cur_meter / 4) * cur_scrolly, 60, cur_meter, screen_distance_y)
-							var load_ms_y: float = time - (screen_distance / px_perframe_y / 60)
-							var last_note_type: int = 0
-							var last_note_ppf: float = 0
-							var last_note_loadms: float = 0
-							var last_note_ppf_y: float = 0
-							var last_note_loadms_y: float = 0
+							# Note dictionary....
+							var ppf_vec: Vector2 = Vector2(
+								get_pixels_per_frame(cur_bpm * (cur_meter / 4) * cur_scroll, 60, cur_meter, screen_distance),
+								get_pixels_per_frame(cur_bpm * (cur_meter / 4) * cur_scrolly, 60, cur_meter, screen_distance_y)
+							)
+							var no: Dictionary = {
+								"note": n,
+								"time": time,
+								"bpm": cur_bpm,
+								"meter": cur_meter,
+								"scroll": Vector2(cur_scroll, cur_scrolly),
+								"ppf": ppf_vec,
+								"load_ms": Vector2(
+									time - (screen_distance / ppf_vec.x / 60),
+									time - (screen_distance / ppf_vec.y / 60)
+								),
+								"roll_note": null,
+								"roll_time": 0.0,
+								"roll_loadms": Vector2(-INF, -INF)
+							}
+							var last_note: Dictionary = {}
 							if n == 8: # Handle
 								var rnoteidx: int = cur_chart.notes.find(cur_note)
 								cur_chart.notes[rnoteidx].get_or_add("roll_time", time)
-								cur_chart.notes[rnoteidx].get_or_add("roll_load_ms", time - (screen_distance / px_perframe / 60))
-								# lot to take in mate
-								last_note_type = cur_chart.notes[rnoteidx]["note"]
-								last_note_ppf = cur_chart.notes[rnoteidx]["ppf"]
-								last_note_loadms = cur_chart.notes[rnoteidx]["load_ms"]
-								last_note_ppf_y = cur_chart.notes[rnoteidx]["ppf_y"]
-								last_note_loadms_y = cur_chart.notes[rnoteidx]["load_ms_y"]
-							cur_note = {"time": time, "scroll": cur_scroll, "scroll_y": cur_scrolly, "meter": cur_meter, "note": n, "load_ms": load_ms, "ppf": px_perframe, "load_ms_y": load_ms_y, "ppf_y": px_perframe_y, "measure_length": notes_in_measure}
+								cur_chart.notes[rnoteidx].get_or_add("roll_load_ms", Vector2(
+									time - (screen_distance / ppf_vec.x / 60),
+									time - (screen_distance / ppf_vec.y / 60)
+								))
+								last_note = cur_chart.notes[rnoteidx]
+							cur_note = no
 							if n == 8:
-								cur_note.get_or_add("roll_type", last_note_type)
-								cur_note.get_or_add("roll_ppf", last_note_ppf)
-								cur_note.get_or_add("roll_loadms", last_note_loadms)
-								cur_note.get_or_add("roll_ppf_y", last_note_ppf_y)
-								cur_note.get_or_add("roll_loadms_y", last_note_loadms_y)
+								cur_note["roll_note"] = last_note
 							cur_chart.notes.append(cur_note)
 						time += 60 * (cur_meter / notes_in_measure) / cur_bpm
 		

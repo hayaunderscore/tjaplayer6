@@ -22,4 +22,4 @@ ascent=0
 descent=0
 fallbacks=[]
 compress=true
-scaling_mode=2
+scaling_mode=0

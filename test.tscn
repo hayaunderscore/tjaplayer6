@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3 uid="uid://c3w8ntkdmxu5g"]
+[gd_scene load_steps=25 format=3 uid="uid://c3w8ntkdmxu5g"]
 
 [ext_resource type="Script" path="res://test.gd" id="1_vmat6"]
 [ext_resource type="AudioStream" uid="uid://2mhf4s1a821v" path="res://snd/dong.wav" id="2_bo5mj"]
@@ -13,7 +13,9 @@
 [ext_resource type="Texture2D" uid="uid://bsqgsh4ld030u" path="res://gfx/taiko/taiko_red_1.png" id="10_sptmg"]
 [ext_resource type="Texture2D" uid="uid://cjyofe7hwbe88" path="res://gfx/taiko/taiko_red_2.png" id="11_n55oy"]
 [ext_resource type="FontVariation" uid="uid://b7ivtij2wrbmp" path="res://gfx/number/combo_normal.tres" id="12_j8pt1"]
+[ext_resource type="Texture2D" uid="uid://68s22crcuj6s" path="res://gfx/taiko/flower.png" id="14_82kmp"]
 [ext_resource type="Texture2D" uid="uid://dktk4julnybtx" path="res://gfx/taiko/flower_m.png" id="14_rtdta"]
+[ext_resource type="Script" path="res://scripts/combo_flower.gd" id="15_75j72"]
 [ext_resource type="Script" path="res://scripts/chara.gd" id="15_cnrta"]
 [ext_resource type="Texture2D" uid="uid://im0dpd6qimgt" path="res://gfx/sfield/sfield_blue.png" id="15_ky7p5"]
 [ext_resource type="Texture2D" uid="uid://b3n4es8jv4yi4" path="res://gfx/sfield/sfield_red.png" id="16_bskvt"]
@@ -162,6 +164,17 @@ offset_top = -44.032
 offset_right = 55.976
 offset_bottom = -12.032
 
+[node name="ComboFlower" type="TextureRect" parent="Taiko/Control"]
+layout_mode = 0
+offset_left = -5.0
+offset_top = -37.0
+offset_right = 115.0
+offset_bottom = 83.0
+scale = Vector2(1e-05, 1e-05)
+pivot_offset = Vector2(60, 60)
+texture = ExtResource("14_82kmp")
+script = ExtResource("15_75j72")
+
 [node name="Combo" type="Label" parent="Taiko/Control"]
 layout_mode = 1
 anchors_preset = 7
@@ -169,15 +182,15 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -43.0
+offset_left = -43.5
 offset_top = -23.0
-offset_right = 45.0
+offset_right = 44.5
 grow_horizontal = 2
 grow_vertical = 0
 scale = Vector2(2.5, 2.5)
 pivot_offset = Vector2(44, 23)
 theme_override_fonts/font = ExtResource("12_j8pt1")
-text = "1000"
+text = "50"
 horizontal_alignment = 1
 vertical_alignment = 2
 

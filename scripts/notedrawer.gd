@@ -1,4 +1,5 @@
 extends Node2D
+class_name NoteDrawer
 
 var draw_list: Array[Dictionary]
 var bar_list: Array[Dictionary]
@@ -70,42 +71,6 @@ func _draw() -> void:
 			if note.get("scroll_y", 0) != 0:
 				yoffs = 164+8 + get_note_position_y(note["load_ms_y"], note["ppf_y"])
 			match note["note"]:
-				8:
-					# The end of a roll note can be many things....
-					var note_end: int = note.get("roll_type")
-					# Handle rendering the body of the roll note....
-					var rollpos: float = get_note_position(note["roll_loadms"], note["roll_ppf"])
-					if roll_bodies[note_end] != null:
-						var fvec: Vector2 = Vector2(rollpos, yoffs) - (Vector2(0, spr.get_height()/2) * note_scale)
-						var rvec: Vector2 = Vector2(pos-rollpos, 0) + (Vector2(-spr.get_width()/2, spr.get_height()) * note_scale)
-						var rect: Rect2 = Rect2()
-						# Negative scroll, switch
-						if sign(note["scroll"]) == -1:
-							fvec = Vector2(pos, yoffs) - (Vector2(0, spr.get_height()/2) * note_scale)
-							rvec = Vector2(rollpos-pos, 0) + (Vector2(-spr.get_width()/2, spr.get_height()) * note_scale)
-						# TODO SCROLL Y
-						draw_set_transform(fvec, note["scroll_y"] / scrolly_conv)
-						rect.end = rvec
-						draw_texture_rect(roll_bodies[note_end], rect, true, col)
-						draw_set_transform(Vector2.ZERO)
-					if roll_ends[note_end] != null:
-						# Point funny
-						draw_set_transform(Vector2(pos, yoffs) - (Vector2(spr.get_width()/2, spr.get_height()/2) * note_scale), note["scroll_y"] / scrolly_conv, Vector2(sign(note["scroll"]), 1))
-						draw_texture_rect(roll_ends[note_end], Rect2(Vector2.ZERO, Vector2(spr.get_width(), spr.get_height()) * note_scale),
-							false, col)
-						# Reset
-						draw_set_transform(Vector2.ZERO)
-				7:
-					if note["time"] < time:
-						pos = 148.0
-					if note["roll_time"] < time:
-						pos = get_note_position(note.get("roll_load_ms", note["load_ms"]), note["ppf"])
-					draw_texture_rect(spr, Rect2(Vector2(pos, yoffs) - (Vector2(spr.get_width()/2, spr.get_height()/2) * note_scale), Vector2(spr.get_width(), spr.get_height()) * note_scale),
-						false, col)
-				999:
-					# Barlines
-					draw_texture_rect(bar_line, Rect2(Vector2(pos, yoffs-bar_line.get_height()/2), Vector2(bar_line.get_width(), bar_line.get_height()) * note_scale),
-						false, col)
 				_:
 					draw_texture_rect(spr, Rect2(Vector2(pos, yoffs) - (Vector2(spr.get_width()/2, spr.get_height()/2) * note_scale), Vector2(spr.get_width(), spr.get_height()) * note_scale),
 						false, col)

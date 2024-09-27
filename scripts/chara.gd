@@ -23,15 +23,15 @@ func _process(delta: float) -> void:
 		1: # gogotime
 			hframes = 4
 			texture = gogo_sprite
-			if song_pos > last_beat + (60/4 / curbpm):
+			if song_pos > last_beat + (60/8 / curbpm):
 				match gogo_beat:
-					0, 1, 2:
+					0, 1, 2, 3:
 						frame = 0
-					3:
+					4:
 						frame = 1
-					4, 5, 6:
+					5, 6, 7, 8:
 						frame = 2
-					7:
+					9:
 						frame = 3
-				gogo_beat = wrap(gogo_beat+1, 0, 8)
+				gogo_beat = wrap(gogo_beat+1, 0, 10)
 				last_beat = song_pos
