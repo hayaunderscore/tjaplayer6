@@ -12,6 +12,22 @@ func get_pixels_per_frame(bpm, fps, time_signature, distance):
 
 var screen_distance: float = (640 * 1) - 148
 var screen_distance_y: float = 640 - 148
+
+func calculate_beat_from_ms(ms: float, bpmevents: Array[Dictionary]):
+	var current_beat: float = 0.0
+	var used_change: int = 0
+	for i in range(0, bpmevents.size()):
+		var bpmchange = bpmevents[i]
+		if ms >= bpmchange["time"]:
+			current_beat += bpmchange["beat_duration"]
+			continue
+		# Hackity hack, on my back
+		if i < bpmevents.size()-2:
+			current_beat += (ms - bpmchange["time"]) * bpmevents[max(0,i-1)]["beat_breakdown"]
+		else:
+			current_beat += (ms - bpmchange["time"]) * bpmevents[min(bpmevents.size()-1,i+1)]["beat_breakdown"]
+		break
+	return current_beat
 	
 func parse_tja(path: String):
 	print("Parsing tja on %s....." % path)
@@ -57,6 +73,26 @@ func parse_tja(path: String):
 		if line.is_empty() or line.begins_with("//"):
 			continue
 		
+		# Shortcut....
+		var add_bpm_change: Callable = func(added_time: float, added_bpm: float, current_chart: ChartData):
+			if current_chart.bpm_log.size() > 0:
+				var last_bpm_change: Dictionary = current_chart.bpm_log[current_chart.bpm_log.size()-1]
+				last_bpm_change["duration"] = (added_time) - last_bpm_change["time"]
+				last_bpm_change["beat_duration"] = (last_bpm_change["bpm"] / 60) * last_bpm_change["duration"]
+			# print("uhhh beat duration ", last_bpm_change["duration"], " and in beats ", last_bpm_change["beat_duration"])
+			current_chart.command_log.append({
+				"time": added_time, 
+				"com": ChartData.CommandType.BPMCHANGE, 
+				"val1": added_bpm
+			})
+			current_chart.bpm_log.append({
+				"time": added_time,
+				"bpm": added_bpm,
+				"duration": 0,
+				"beat_duration": 0,
+				"beat_breakdown": (added_bpm / 60)
+			})
+		
 		if should_read_metadata:
 			if line.begins_with("#START"):
 				should_read_metadata = false
@@ -69,6 +105,8 @@ func parse_tja(path: String):
 				cur_chart.balloons = balloons
 				if tjaf.alttitle.is_empty():
 					tjaf.alttitle = tjaf.title
+				# Shhh
+				add_bpm_change.call(time, cur_bpm, cur_chart)
 			else:
 				tjaf.title = _find_value(line, "TITLE:", tjaf.title)
 				if tjaf.alttitle.is_empty():
@@ -89,7 +127,6 @@ func parse_tja(path: String):
 					disable_scroll = true
 				elif line.begins_with("#HBSCROLL"):
 					bemani_scroll = true
-					print("bemani scroll!")
 					disable_scroll = false
 				
 				# Handle chart specific metadata
@@ -118,15 +155,31 @@ func parse_tja(path: String):
 		
 		# Chart has ended, read metadata again
 		if line.begins_with("#END"):
+			# Grab the latest command and attach the time there...
+			add_bpm_change.call(time, cur_bpm, cur_chart)
+			add_bpm_change.call(tjaf.wave.get_length(), cur_bpm, cur_chart)
+			for note in cur_chart.notes:
+				note["beat_position"] = calculate_beat_from_ms(note["time"], cur_chart.bpm_log)
+			for note in cur_chart.barline_data:
+				note["beat_position"] = calculate_beat_from_ms(note["time"], cur_chart.bpm_log)
 			var sorted: Array[Dictionary] = cur_chart.notes.duplicate(true)
 			sorted = sorted.filter(func(a): return a["note"] < 999)
 			# sorted.sort_custom(func(a, b): a["time"] < b["time"])
 			cur_chart.note_draw_data = sorted.duplicate(true)
 			cur_chart.bemani_scroll = bemani_scroll
 			cur_chart.disable_scroll = disable_scroll
+			bemani_scroll = false
+			disable_scroll = false
 			tjaf.chartinfo.append(cur_chart)
 			should_read_metadata = true
 			continue
+		
+		if line.begins_with("#BMSCROLL"):
+			bemani_scroll = true
+			disable_scroll = true
+		elif line.begins_with("#HBSCROLL"):
+			bemani_scroll = true
+			disable_scroll = false
 		
 		# SORRY NOTHING
 		if line.is_empty():
@@ -137,9 +190,14 @@ func parse_tja(path: String):
 		if barlines and not line.begins_with("#") and not cont_measure:
 			var bpm: float = cur_bpm
 			if bemani_scroll: bpm = tjaf.start_bpm
-			var px_perframe: float = get_pixels_per_frame(bpm * (cur_meter / 4) * cur_scroll, 60, cur_meter, screen_distance)
-			var load_ms: float = time - (screen_distance / px_perframe / 60)
-			cur_chart.barline_data.append({"time": time, "scroll": cur_scroll, "meter": cur_meter, "note": ChartData.NoteType.BARLINE, "load_ms": load_ms, "ppf": px_perframe})
+			var ppf_vec: Vector2 = Vector2(
+				get_pixels_per_frame(cur_bpm * (cur_meter / 4) * cur_scroll, 60, cur_meter, screen_distance),
+				get_pixels_per_frame(cur_bpm * (cur_meter / 4) * cur_scrolly, 60, cur_meter, screen_distance_y)
+			)
+			cur_chart.barline_data.append({"time": time, "scroll": Vector2(cur_scroll, cur_scrolly), "meter": cur_meter, "note": ChartData.NoteType.BARLINE, "load_ms": Vector2(
+									time - (screen_distance / ppf_vec.x / 60),
+									time - (screen_distance / ppf_vec.y / 60)
+								), "ppf": ppf_vec})
 		
 		# Handle current line stuff
 		measures.append(line)
@@ -170,9 +228,9 @@ func parse_tja(path: String):
 		for l in measures:
 			match l:
 				"#GOGOSTART":
-					cur_chart.notes.append({"time": time, "scroll": cur_scroll, "note": ChartData.NoteType.GOGOSTART, "load_ms": 0, "ppf": 0})
+					cur_chart.notes.append({"time": time, "scroll": Vector2(cur_scroll, cur_scrolly), "note": ChartData.NoteType.GOGOSTART, "load_ms": Vector2.ZERO, "ppf": Vector2.ZERO})
 				"#GOGOEND":
-					cur_chart.notes.append({"time": time, "scroll": cur_scroll, "note": ChartData.NoteType.GOGOEND, "load_ms": 0, "ppf": 0})
+					cur_chart.notes.append({"time": time, "scroll": Vector2(cur_scroll, cur_scrolly), "note": ChartData.NoteType.GOGOEND, "load_ms": Vector2.ZERO, "ppf": Vector2.ZERO})
 				_:
 					if l.begins_with("#"):
 						## Comment
@@ -183,10 +241,16 @@ func parse_tja(path: String):
 						var command_value := _find_value(line, "#BPMCHANGE")
 						if command_value:
 							cur_bpm = float(command_value)
-							cur_chart.command_log.append({"time": time, "com": ChartData.CommandType.BPMCHANGE, "val1": cur_bpm})
+							add_bpm_change.call(time, cur_bpm, cur_chart)
 						command_value = _find_value(line, "#DELAY")
 						if command_value:
+							# Positive, add a tiny bpmchange if on bm/hbscroll
+							if float(command_value) > 0 and bemani_scroll:
+								add_bpm_change.call(time, 0.0001, cur_chart)
 							time += float(command_value)
+							# Revert back to normal bpm
+							if float(command_value) > 0 and bemani_scroll:
+								add_bpm_change.call(time, cur_bpm, cur_chart)
 							cur_chart.command_log.append({"time": time, "com": ChartData.CommandType.DELAY, "val1": command_value})
 						command_value = _find_value(line, "#MEASURE")
 						if command_value:

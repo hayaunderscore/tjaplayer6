@@ -34,13 +34,15 @@ var roll_bodies: Array[Texture2D] = [
 ]
 var bar_line: Texture2D = preload("res://gfx/notes/line.png")
 
-func get_note_position(ms, pixels_per_frame):
+var current_beat: float = 0.0
+var bemani_scroll: bool = false
+
+func get_note_position(ms, pixels_per_frame, scroll: Vector2, beat: float):
+	if bemani_scroll: return get_note_hbscroll_position(scroll, beat)
 	return int((640) + pixels_per_frame * 60 * (ms - time))
 
-var last_beat: float = 0
-
-func get_hb_note_pos_x(time, speed, beat):
-	return (speed * (530 / 4)) * (beat - (last_beat / 60 / cur_bpm))
+func get_note_hbscroll_position(scroll: Vector2, beat: float):
+	return (scroll.x * (530/4)) * (beat - current_beat) + 152
 
 func get_note_position_y(ms, pixels_per_frame):
 	return int((480) + pixels_per_frame * 60 * (ms - time))
@@ -51,25 +53,25 @@ var cur_bpm: float = 0.0
 func _draw() -> void:
 	for i in range(0, bar_list.size(), 1):
 		var note: Dictionary = bar_list[i]
-		var pos = get_note_position(note["load_ms"], note["ppf"])
+		var pos = get_note_position(note["load_ms"].x, note["ppf"].x, note["scroll"], note["beat_position"])
 		var yoffs: float = 164.0
 		draw_texture_rect(bar_line, Rect2(Vector2(pos, yoffs-bar_line.get_height()/2), Vector2(bar_line.get_width(), bar_line.get_height())),
 			false)
 	
-	for i in range(0, draw_list.size(), 1):
+	for i in range(min(draw_list.size()-1, 512), -1, -1):
 		var note: Dictionary = draw_list[i]
 		if note["note"] >= 999: continue
 		var col: Color = Color.WHITE
 		var note_scale: Vector2 = Vector2(1, 1)
-		var pos = get_note_position(note["load_ms"], note["ppf"])
+		var pos = get_note_position(note["load_ms"].x, note["ppf"].x, note["scroll"], note["beat_position"])
 		if pos > 640+80 and note["note"] != 8: continue
 		if (note["note"] < note_sprites.size() and note_sprites[note["note"]] != null) or note["note"] == 999:
 			var spr: Texture2D
 			if note["note"] < 999: spr = note_sprites[note["note"]]
 			var yoffs: float = 164.0
 			# Handle y scroll...
-			if note.get("scroll_y", 0) != 0:
-				yoffs = 164+8 + get_note_position_y(note["load_ms_y"], note["ppf_y"])
+			if note.get("scroll").y != 0:
+				yoffs = 164+8 + get_note_position_y(note["load_ms"].y, note["ppf"].y)
 			match note["note"]:
 				_:
 					draw_texture_rect(spr, Rect2(Vector2(pos, yoffs) - (Vector2(spr.get_width()/2, spr.get_height()/2) * note_scale), Vector2(spr.get_width(), spr.get_height()) * note_scale),
@@ -79,6 +81,4 @@ func _draw() -> void:
 					false, col)
 
 func _process(delta: float) -> void:
-	if time > last_beat + (60 / cur_bpm):
-		last_beat = time
 	queue_redraw()

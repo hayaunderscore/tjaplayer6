@@ -25,17 +25,52 @@ var autoplay: bool = true
 var auto_don_side: int = 0
 var auto_kat_side: int = 0
 
+var beat: float = 0.0
+var current_beat: float = 0.0
+
 func _ready() -> void:
-	cur_tja = TJA.parse_tja("res://charts/Taiko Drum Monster.tja")
+	get_viewport().get_window().files_dropped.connect(on_drop)
+
+func on_drop(path: PackedStringArray):
+	cur_chart = null
+	don_chan.last_beat = 0
+	don_chan.last_late_beat = 0
+	don_chan.state = 0
+	cur_tja = TJA.parse_tja(path[0])
 	if cur_tja.chartinfo.size() == 0:
 		print("No chart detected! Abort!")
 		return
 	audio.stream = cur_tja.wave
-	print("Playing first chart in chartinfo array...")
-	cur_chart = cur_tja.chartinfo[0]
+	print("Playing first oni/ura chart in chartinfo array...")
+	for chart in cur_tja.chartinfo:
+		if chart.course == 4:
+			cur_chart = chart
+			break
+	if not cur_chart:
+		for chart in cur_tja.chartinfo:
+			if chart.course == 3:
+				cur_chart = chart
+				break
 	current_bpm = cur_tja.start_bpm
 	current_note_list.clear()
+	elapsed = 0
 	preamble.start()
+	beat = (current_bpm / 60) * cur_tja.offset * 60
+	$ColorRect/Title.text = cur_tja.alttitle
+	# Yes this is deferred since the size doesnt change automatically lmao
+	call_deferred("change_title")
+	$Intro.horizontal_alignment = 0
+	$Intro.text = \
+	"Subtitle: %s
+Maker: %s
+	
+Demostart: %.3f
+Offset: %.3f" % [cur_tja.subtitle, cur_tja.maker, cur_tja.demo_start, cur_tja.offset]
+
+func change_title():
+	$ColorRect/Title.pivot_offset.x = $ColorRect/Title.size.x
+	if cur_tja.alttitle.length() > 40:
+		$ColorRect/Title.scale.x = 40.0 / cur_tja.alttitle.length()
 
 func preamble_timeout() -> void:
 	audio.play()
@@ -55,6 +90,7 @@ func auto_play():
 				ChartData.NoteType.GOGOSTART:
 					don_chan.state = 1
 					don_chan.gogo_beat = 0
+					don_chan.gogo2_beat = 0
 					current_note_list.remove_at(i)
 				ChartData.NoteType.GOGOEND:
 					don_chan.state = 0
@@ -67,6 +103,8 @@ func auto_play():
 		if type < 5:
 			combo += 1
 			taiko.change_combo(combo)
+			if combo > 0 and combo % 10 == 0 and don_chan.state != 1:
+				don_chan.state = 2
 		match type:
 			1:
 				taiko.taiko_input(0, auto_don_side, true)
@@ -100,6 +138,19 @@ func auto_play():
 					add_child(note_boom)
 			cur_chart.note_draw_data.remove_at(dr)
 
+func handle_play_events():
+	for i in range(cur_chart.command_log.size()-1, -1, -1):
+		var event: Dictionary = cur_chart.command_log[i]
+		# Look, we can't detect if we should hit if we don't have one.
+		if not event.has("time"): continue
+		var type: int = event["com"]
+		var time: float = event["time"]
+		if time >= elapsed: continue
+		match type:
+			ChartData.CommandType.BPMCHANGE:
+				current_bpm = event["val1"]
+		cur_chart.command_log.remove_at(i)
+
 func _physics_process(delta: float) -> void:
 	if not cur_chart: return
 	elapsed = audio.get_playback_position() + AudioServer.get_time_since_last_mix()
@@ -108,8 +159,13 @@ func _physics_process(delta: float) -> void:
 	# Apply preamble.
 	elapsed -= preamble.time_left
 	
+	handle_play_events()
+	
+	current_beat = TJA.calculate_beat_from_ms(elapsed, cur_chart.bpm_log)
+	$CurrentBeatLabel.text = "Current beat: %.3f" % current_beat
+	
 	# DON CHAN #
-	don_chan.curbpm = current_bpm
+	don_chan.curbpm = max(0, current_bpm)
 	# Negative values cause don-chan to not bop at the beginning
 	don_chan.song_pos = elapsed + preamble.wait_time
 	
@@ -121,9 +177,12 @@ func _physics_process(delta: float) -> void:
 		current_note_list.append(note)
 	
 	# TODO
-	# notes.draw_list = cur_chart.note_draw_data
-	# notes.bar_list = cur_chart.barline_data
-	# notes.cur_bpm = current_bpm
+	notes.draw_list = cur_chart.note_draw_data
+	notes.bar_list = cur_chart.barline_data
+	notes.cur_bpm = current_bpm
+	notes.time = elapsed
+	notes.current_beat = current_beat
+	notes.bemani_scroll = cur_chart.bemani_scroll
 	
 	# Handle auto-play (enabled by default...)
 	auto_play()

@@ -11,9 +11,9 @@ config_version=5
 [application]
 
 config/name="TJAPlayer6"
-run/main_scene="res://test.tscn"
+run/main_scene="res://game.tscn"
 config/features=PackedStringArray("4.3", "Mobile")
-config/icon="res://icon.svg"
+config/icon="res://icon.png"
 
 [autoload]
 
@@ -23,6 +23,7 @@ TJA="*res://scripts/loader.gd"
 
 window/size/viewport_width=640
 window/size/viewport_height=480
+window/stretch/mode="viewport"
 
 [rendering]
 

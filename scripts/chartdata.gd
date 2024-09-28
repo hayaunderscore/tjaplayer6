@@ -48,6 +48,7 @@ var disable_scroll: bool = false
 var notes: Array[Dictionary]
 # {command_type, value1, value2}
 var command_log: Array[Dictionary]
+var bpm_log: Array[Dictionary]
 # Draw data
 var note_draw_data: Array[Dictionary]
 var barline_data: Array[Dictionary]

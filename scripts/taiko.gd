@@ -69,7 +69,7 @@ func drop_combo():
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
-	combo_text.scale.y = max(1, combo_text.scale.y-delta*2)
+	combo_text.scale.y = max(1, combo_text.scale.y-delta)
 	for i in range(0, ka.size()):
 		ka_delay[i] = max(0, ka_delay[i]-delta)
 		if ka_delay[i] <= 0:

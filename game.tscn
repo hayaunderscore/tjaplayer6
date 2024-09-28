@@ -1,4 +1,4 @@
-[gd_scene load_steps=25 format=3 uid="uid://cqrjctcrfhnv"]
+[gd_scene load_steps=27 format=3 uid="uid://cqrjctcrfhnv"]
 
 [ext_resource type="Script" path="res://game.gd" id="1_kakou"]
 [ext_resource type="AudioStream" uid="uid://2mhf4s1a821v" path="res://snd/dong.wav" id="2_3pvjb"]
@@ -19,10 +19,12 @@
 [ext_resource type="Texture2D" uid="uid://im0dpd6qimgt" path="res://gfx/sfield/sfield_blue.png" id="17_qjmdc"]
 [ext_resource type="Texture2D" uid="uid://b3n4es8jv4yi4" path="res://gfx/sfield/sfield_red.png" id="18_lo0vq"]
 [ext_resource type="Texture2D" uid="uid://b7d2tmxd3a3d1" path="res://gfx/sfield/sfield_hit.png" id="19_esi5k"]
+[ext_resource type="Texture2D" uid="uid://b30tpxr8olvle" path="res://gfx/chara/10combo.png" id="20_4hic0"]
 [ext_resource type="Texture2D" uid="uid://clxvt44rxjn7y" path="res://gfx/chara/gogo.png" id="20_5ys4s"]
 [ext_resource type="Script" path="res://scripts/chara.gd" id="21_burjm"]
 [ext_resource type="Texture2D" uid="uid://erhqkb3pfwyc" path="res://gfx/chara/idle.png" id="22_vk86d"]
 [ext_resource type="Texture2D" uid="uid://bh6n8w3eboems" path="res://gfx/gauge/soulgauge_hard_p1_1.png" id="23_sikdf"]
+[ext_resource type="FontFile" uid="uid://cvss1dbjddhcc" path="res://gfx/font/OtomanopeeOne-Regular.ttf" id="25_ule7g"]
 
 [sub_resource type="Curve2D" id="Curve2D_pjfov"]
 _data = {
@@ -114,6 +116,7 @@ centered = false
 offset = Vector2(0, -16)
 
 [node name="Combo" type="Node2D" parent="Taiko"]
+visible = false
 
 [node name="Flower" type="Sprite2D" parent="Taiko/Combo"]
 position = Vector2(66, 42)
@@ -156,11 +159,11 @@ one_shot = true
 [node name="Chara" type="Sprite2D" parent="."]
 z_index = -2048
 position = Vector2(96, 72)
-texture = ExtResource("20_5ys4s")
-hframes = 4
+texture = ExtResource("20_4hic0")
 script = ExtResource("21_burjm")
 idle_sprite = ExtResource("22_vk86d")
 gogo_sprite = ExtResource("20_5ys4s")
+combo_sprite = ExtResource("20_4hic0")
 idle_frames = 2
 
 [node name="Soulgauge" type="Sprite2D" parent="."]
@@ -171,5 +174,59 @@ offset = Vector2(0, -16)
 
 [node name="BaseSoulCurve" type="Path2D" parent="."]
 curve = SubResource("Curve2D_pjfov")
+
+[node name="Intro" type="Label" parent="."]
+offset_left = 8.0
+offset_top = 265.0
+offset_right = 632.0
+offset_bottom = 468.0
+theme_override_constants/outline_size = 8
+theme_override_fonts/font = ExtResource("25_ule7g")
+theme_override_font_sizes/font_size = 20
+text = "Welcome to TJAPlayer6!
+Drag and drop a TJA into the window to get started.
+(The game will select Oni/Ura charts only!)
+
+Charts with branches will not work!
+Charts with no music will not work!
+
+This is still a WIP, so some things may be broken!"
+horizontal_alignment = 1
+vertical_alignment = 2
+
+[node name="ColorRect" type="ColorRect" parent="."]
+anchors_preset = -1
+anchor_left = -0.013
+anchor_top = -0.136
+anchor_right = -0.013
+anchor_bottom = -0.136
+offset_top = 230.0
+offset_right = 640.0
+offset_bottom = 260.0
+color = Color(0, 0, 0, 1)
+
+[node name="Title" type="Label" parent="ColorRect"]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -752.0
+offset_top = -13.0
+offset_right = -12.0
+offset_bottom = 11.0
+grow_horizontal = 0
+grow_vertical = 2
+pivot_offset = Vector2(388, 12)
+theme_override_fonts/font = ExtResource("25_ule7g")
+theme_override_font_sizes/font_size = 20
+text = "おはようございます"
+horizontal_alignment = 2
+
+[node name="CurrentBeatLabel" type="Label" parent="."]
+offset_top = 260.0
+offset_right = 40.0
+offset_bottom = 283.0
 
 [connection signal="timeout" from="Timer" to="." method="preamble_timeout"]
