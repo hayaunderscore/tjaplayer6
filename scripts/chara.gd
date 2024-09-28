@@ -30,6 +30,7 @@ func _process(delta: float) -> void:
 		1: # gogotime
 			if is_instance_valid(last_tween):
 				last_tween.stop()
+				position.y = 72
 			hframes = 4
 			texture = gogo_sprite
 			if (song_pos - (delta * curbpm/60)) > last_beat + (60 / curbpm):

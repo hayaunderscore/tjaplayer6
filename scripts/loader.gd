@@ -28,6 +28,42 @@ func calculate_beat_from_ms(ms: float, bpmevents: Array[Dictionary]):
 			current_beat += (ms - bpmchange["time"]) * bpmevents[min(bpmevents.size()-1,i+1)]["beat_breakdown"]
 		break
 	return current_beat
+
+# https://github.com/splitlane/SplitlaneTaiko/blob/main/Versions/Taikov34.lua
+func parse_complex_number_simple(s: String):
+	var t = s.split("+")
+	var newt = []
+	
+	for item in t:
+		var t2 = item.split("-")
+		for i in range(len(t2)):
+			if i == 0:
+				newt.append(t2[i])
+			else:
+				newt.append("-" + t2[i])
+	
+	t = newt
+	var out: Vector2 = Vector2.ZERO # [real, imaginary]
+	
+	for item in t:
+		if item != "":
+			var imaginary = false
+			if item.find("i") != -1:
+				imaginary = true
+				item = item.replace("i", "")
+				
+			# Leniency for 1+i, etc.
+			if imaginary and (item == "" or item == "-"):
+				item += "1"
+			
+			item = float(item)
+			
+			if imaginary:
+				out.y += item
+			else:
+				out.x += item
+	
+	return out
 	
 func parse_tja(path: String):
 	print("Parsing tja on %s....." % path)
@@ -194,7 +230,7 @@ func parse_tja(path: String):
 				get_pixels_per_frame(cur_bpm * (cur_meter / 4) * cur_scroll, 60, cur_meter, screen_distance),
 				get_pixels_per_frame(cur_bpm * (cur_meter / 4) * cur_scrolly, 60, cur_meter, screen_distance_y)
 			)
-			cur_chart.barline_data.append({"time": time, "scroll": Vector2(cur_scroll, cur_scrolly), "meter": cur_meter, "note": ChartData.NoteType.BARLINE, "load_ms": Vector2(
+			cur_chart.barline_data.append({"time": time, "scroll": Vector2(cur_scroll, cur_scrolly), "bpm": cur_bpm, "meter": cur_meter, "note": ChartData.NoteType.BARLINE, "load_ms": Vector2(
 									time - (screen_distance / ppf_vec.x / 60),
 									time - (screen_distance / ppf_vec.y / 60)
 								), "ppf": ppf_vec})
@@ -245,12 +281,12 @@ func parse_tja(path: String):
 						command_value = _find_value(line, "#DELAY")
 						if command_value:
 							# Positive, add a tiny bpmchange if on bm/hbscroll
-							if float(command_value) > 0 and bemani_scroll:
-								add_bpm_change.call(time, 0.0001, cur_chart)
+							#if float(command_value) > 0 and bemani_scroll:
+								#add_bpm_change.call(time, 0, cur_chart)
 							time += float(command_value)
 							# Revert back to normal bpm
-							if float(command_value) > 0 and bemani_scroll:
-								add_bpm_change.call(time, cur_bpm, cur_chart)
+							#if float(command_value) > 0 and bemani_scroll:
+								#add_bpm_change.call(time, cur_bpm, cur_chart)
 							cur_chart.command_log.append({"time": time, "com": ChartData.CommandType.DELAY, "val1": command_value})
 						command_value = _find_value(line, "#MEASURE")
 						if command_value:
@@ -269,16 +305,9 @@ func parse_tja(path: String):
 								cur_chart.command_log.append({"time": time, "com": ChartData.CommandType.SCROLL, "val1": float(cur_scroll)})
 							else:
 								last_scrollers = Vector2(cur_scroll, cur_scrolly)
-								command_value = command_value.erase(command_value.find("i"))
-								var scrollers: PackedStringArray = command_value.split("+")
-								if scrollers.is_empty():
-									scrollers = command_value.split("-")
-								if scrollers.is_empty():
-									scrollers = [0, 1]
-								cur_scroll = float(tjaf.head_scroll) * float(scrollers[0])
-								if cur_scroll == 0:
-									cur_scroll = 0.0001
-								cur_scrolly = float(tjaf.head_scroll) * float(scrollers[1])
+								var vec = parse_complex_number_simple(command_value)
+								cur_scroll = vec.x
+								cur_scrolly = vec.y
 								cur_chart.command_log.append({"time": time, "com": ChartData.CommandType.SCROLL, "val1": float(cur_scroll), "val2": float(cur_scrolly)})
 					if l.begins_with("#"): continue
 					for idx in line.trim_suffix(","):
