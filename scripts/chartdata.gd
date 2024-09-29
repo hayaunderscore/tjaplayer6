@@ -20,6 +20,11 @@ enum NoteType {
 	BALLOON,
 	END_ROLL,
 	KUSADAMA,
+	# OpenTaiko-Outfox standard
+	BOMB,	# C
+	FUSE,	# D
+	ADLIB,	# E
+	SWAP,	# F
 	# Special "notes" (starts at 999)
 	BARLINE = 999, # Yes. A barline is a notetype.
 	GOGOSTART,
@@ -49,6 +54,7 @@ var notes: Array[Dictionary]
 # {command_type, value1, value2}
 var command_log: Array[Dictionary]
 var bpm_log: Array[Dictionary]
+var positive_delay_log: Array[Dictionary]
 # Draw data
 var note_draw_data: Array[Dictionary]
 var barline_data: Array[Dictionary]

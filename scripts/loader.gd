@@ -1,6 +1,8 @@
 extends Node
 
 static func _find_value(line: String, key: String, value := "", overwrite := false) -> String:
+	if line.contains("//"):
+		line = line.erase(line.find("//"), 9999)
 	return line.trim_prefix(key).strip_edges() if line.begins_with(key) and not (overwrite and value) else value
 
 # https://github.com/Yonokid/PyTaiko/blob/8164a71b451311e7a6790e68055062745fc9dc38/global_funcs.py#L134C1-L138C45
@@ -28,6 +30,17 @@ func calculate_beat_from_ms(ms: float, bpmevents: Array[Dictionary]):
 			current_beat += (ms - bpmchange["time"]) * bpmevents[min(bpmevents.size()-1,i+1)]["beat_breakdown"]
 		break
 	return current_beat
+
+func calculate_positive_delay(ms: float, events: Array[Dictionary]):
+	var current_time: float = 0.0
+	var used_change: int = 0
+	for i in range(0, events.size()):
+		var change = events[i]
+		if ms >= change["time"]:
+			continue
+		current_time += (ms - change["time"])
+		break
+	return current_time
 
 # https://github.com/splitlane/SplitlaneTaiko/blob/main/Versions/Taikov34.lua
 func parse_complex_number_simple(s: String):
@@ -102,6 +115,8 @@ func parse_tja(path: String):
 	var bemani_scroll: bool = false
 	var disable_scroll: bool = false
 	
+	var current_negative_delay: float = 0
+	
 	while file.get_position() < file.get_length():
 		# Current line
 		var line: String = file.get_line().strip_edges()
@@ -129,6 +144,22 @@ func parse_tja(path: String):
 				"beat_breakdown": (added_bpm / 60)
 			})
 		
+		var add_positive_delay: Callable = func(added_time: float, added_delay: float, current_chart: ChartData):
+			if current_chart.positive_delay_log.size() > 0:
+				var last_bpm_change: Dictionary = current_chart.positive_delay_log[current_chart.positive_delay_log.size()-1]
+				last_bpm_change["duration"] = (added_time) - last_bpm_change["time"]
+			# print("uhhh beat duration ", last_bpm_change["duration"], " and in beats ", last_bpm_change["beat_duration"])
+			current_chart.command_log.append({
+				"time": added_time, 
+				"com": ChartData.CommandType.DELAY, 
+				"val1": added_delay
+			})
+			current_chart.positive_delay_log.append({
+				"time": added_time,
+				"delay": added_delay,
+				"duration": 0,
+			})
+		
 		if should_read_metadata:
 			if line.begins_with("#START"):
 				should_read_metadata = false
@@ -143,6 +174,7 @@ func parse_tja(path: String):
 					tjaf.alttitle = tjaf.title
 				# Shhh
 				add_bpm_change.call(time, cur_bpm, cur_chart)
+				add_positive_delay.call(time, 0, cur_chart)
 			else:
 				tjaf.title = _find_value(line, "TITLE:", tjaf.title)
 				if tjaf.alttitle.is_empty():
@@ -194,10 +226,12 @@ func parse_tja(path: String):
 			# Grab the latest command and attach the time there...
 			add_bpm_change.call(time, cur_bpm, cur_chart)
 			add_bpm_change.call(tjaf.wave.get_length(), cur_bpm, cur_chart)
+			add_positive_delay.call(time, 0, cur_chart)
+			add_positive_delay.call(tjaf.wave.get_length(), 0, cur_chart)
 			for note in cur_chart.notes:
-				note["beat_position"] = calculate_beat_from_ms(note["time"], cur_chart.bpm_log)
+				note["beat_position"] = calculate_beat_from_ms(note["time"] - note["negative_delay"], cur_chart.bpm_log)
 			for note in cur_chart.barline_data:
-				note["beat_position"] = calculate_beat_from_ms(note["time"], cur_chart.bpm_log)
+				note["beat_position"] = calculate_beat_from_ms(note["time"] - note["negative_delay"], cur_chart.bpm_log)
 			var sorted: Array[Dictionary] = cur_chart.notes.duplicate(true)
 			sorted = sorted.filter(func(a): return a["note"] < 999)
 			# sorted.sort_custom(func(a, b): a["time"] < b["time"])
@@ -231,9 +265,9 @@ func parse_tja(path: String):
 				get_pixels_per_frame(cur_bpm * (cur_meter / 4) * cur_scrolly, 60, cur_meter, screen_distance_y)
 			)
 			cur_chart.barline_data.append({"time": time, "scroll": Vector2(cur_scroll, cur_scrolly), "bpm": cur_bpm, "meter": cur_meter, "note": ChartData.NoteType.BARLINE, "load_ms": Vector2(
-									time - (screen_distance / ppf_vec.x / 60),
-									time - (screen_distance / ppf_vec.y / 60)
-								), "ppf": ppf_vec})
+				time - (screen_distance / ppf_vec.x / 60),
+				time - (screen_distance / ppf_vec.y / 60)
+				), "ppf": ppf_vec, "negative_delay": current_negative_delay})
 		
 		# Handle current line stuff
 		measures.append(line)
@@ -264,9 +298,9 @@ func parse_tja(path: String):
 		for l in measures:
 			match l:
 				"#GOGOSTART":
-					cur_chart.notes.append({"time": time, "scroll": Vector2(cur_scroll, cur_scrolly), "note": ChartData.NoteType.GOGOSTART, "load_ms": Vector2.ZERO, "ppf": Vector2.ZERO})
+					cur_chart.notes.append({"time": time, "scroll": Vector2(cur_scroll, cur_scrolly), "note": ChartData.NoteType.GOGOSTART, "load_ms": Vector2.ZERO, "ppf": Vector2.ZERO, "negative_delay": 0})
 				"#GOGOEND":
-					cur_chart.notes.append({"time": time, "scroll": Vector2(cur_scroll, cur_scrolly), "note": ChartData.NoteType.GOGOEND, "load_ms": Vector2.ZERO, "ppf": Vector2.ZERO})
+					cur_chart.notes.append({"time": time, "scroll": Vector2(cur_scroll, cur_scrolly), "note": ChartData.NoteType.GOGOEND, "load_ms": Vector2.ZERO, "ppf": Vector2.ZERO, "negative_delay": 0})
 				_:
 					if l.begins_with("#"):
 						## Comment
@@ -280,13 +314,10 @@ func parse_tja(path: String):
 							add_bpm_change.call(time, cur_bpm, cur_chart)
 						command_value = _find_value(line, "#DELAY")
 						if command_value:
-							# Positive, add a tiny bpmchange if on bm/hbscroll
-							#if float(command_value) > 0 and bemani_scroll:
-								#add_bpm_change.call(time, 0, cur_chart)
 							time += float(command_value)
-							# Revert back to normal bpm
-							#if float(command_value) > 0 and bemani_scroll:
-								#add_bpm_change.call(time, cur_bpm, cur_chart)
+							# current_negative_delay += abs(float(command_value))
+							if float(command_value) > 0:
+								add_positive_delay.call(time, float(command_value), cur_chart)
 							cur_chart.command_log.append({"time": time, "com": ChartData.CommandType.DELAY, "val1": command_value})
 						command_value = _find_value(line, "#MEASURE")
 						if command_value:
@@ -331,7 +362,9 @@ func parse_tja(path: String):
 								),
 								"roll_note": null,
 								"roll_time": 0.0,
-								"roll_loadms": Vector2(-INF, -INF)
+								"roll_loadms": Vector2(-INF, -INF),
+								"balloon_value": 0,
+								"negative_delay": current_negative_delay,
 							}
 							var last_note: Dictionary = {}
 							if n == 8: # Handle

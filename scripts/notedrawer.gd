@@ -74,29 +74,23 @@ func _draw() -> void:
 				draw_texture_rect(balloon_end, Rect2(pos + Vector2(80, 0) - (Vector2(spr.get_width()/2, spr.get_height()/2) * note_scale), Vector2(spr.get_width(), spr.get_height()) * note_scale),
 					false, col)
 			match note["note"]:
-				# TODO negative, and y scrolls....
-				# Those don't work properly yet
-				# Math is quite possibly my greatest enemy here
 				ChartData.NoteType.END_ROLL:
 					var last_note: Dictionary = note["roll_note"]
 					var last_type: int = last_note["note"]
 					if last_type == ChartData.NoteType.BALLOON:
 						continue
+					# I think it's probably best we precalculate these
+					# Doing this is not accurate to how TaikoJiro's rolls work
+					# See: Oshama Scramble complex number chart
 					var last_pos: Vector2 = get_note_position(last_note["time"], last_note["bpm"], last_note["scroll"], last_note["beat_position"])
-					draw_set_transform(pos, last_pos.angle_to_point(pos))
-					var dist: float = abs(last_pos.x - pos.x)
-					if dist <= 0:
-						dist = abs(last_pos.y - pos.y)
-					# Draw tail end
-					draw_texture_rect(roll_ends[last_type], Rect2(
-						-Vector2(roll_ends[last_type].get_height()/2, roll_ends[last_type].get_height()/2),
-						Vector2(roll_ends[last_type].get_width(), roll_ends[last_type].get_height())
-					), false, col)
+					draw_set_transform(last_pos, last_pos.angle_to_point(pos))
+					var dist: float = last_pos.distance_to(pos)
 					# Draw tail body
-					draw_texture_rect(roll_bodies[last_type], Rect2(
-						-Vector2(0, roll_bodies[last_type].get_height()/2) + (last_pos - pos),
-						Vector2(dist-roll_ends[last_type].get_height()/2, roll_bodies[last_type].get_height())
-					), true, col)
+					var rect: Rect2 = Rect2(-Vector2(0, roll_bodies[last_type].get_height()/2), Vector2(dist+1, roll_bodies[last_type].get_height())).abs()
+					draw_texture_rect(roll_bodies[last_type], rect, true, col)
+					# Draw tail end
+					rect = Rect2(Vector2(dist, -roll_ends[last_type].get_height()/2), Vector2(roll_ends[last_type].get_width(), roll_ends[last_type].get_height())).abs()
+					draw_texture_rect(roll_ends[last_type], rect, true, col)
 					# Reset when done >:(
 					draw_set_transform(Vector2.ZERO)
 				_:

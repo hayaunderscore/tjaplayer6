@@ -53,6 +53,7 @@ func on_drop(path: PackedStringArray):
 				break
 	current_bpm = cur_tja.start_bpm
 	current_note_list.clear()
+	current_note_list = cur_chart.notes
 	elapsed = 0
 	preamble.start()
 	beat = (current_bpm / 60) * cur_tja.offset * 60
@@ -78,7 +79,7 @@ func preamble_timeout() -> void:
 func auto_play():
 	if not autoplay: return
 	# In reverse to handle removing these within the loop
-	for i in range(current_note_list.size()-1, -1, -1):
+	for i in range(min(current_note_list.size()-1, 1024), -1, -1):
 		var note: Dictionary = current_note_list[i]
 		# Look, we can't detect if we should hit if we don't have one.
 		if not note.has("time"): continue
@@ -151,6 +152,8 @@ func handle_play_events():
 				current_bpm = event["val1"]
 		cur_chart.command_log.remove_at(i)
 
+var last_current_beat: float = 0.0
+
 func _physics_process(delta: float) -> void:
 	if not cur_chart: return
 	elapsed = audio.get_playback_position() + AudioServer.get_time_since_last_mix()
@@ -161,6 +164,7 @@ func _physics_process(delta: float) -> void:
 	
 	handle_play_events()
 	
+	last_current_beat = current_beat
 	current_beat = TJA.calculate_beat_from_ms(elapsed, cur_chart.bpm_log)
 	$CurrentBeatLabel.text = "Current beat: %.3f" % current_beat
 	
@@ -168,13 +172,6 @@ func _physics_process(delta: float) -> void:
 	don_chan.curbpm = max(0, current_bpm)
 	# Negative values cause don-chan to not bop at the beginning
 	don_chan.song_pos = elapsed + preamble.wait_time
-	
-	# The note list has a limited size of 1024 entries to prevent lag...
-	# This should be enough...
-	if cur_chart.notes.size() > 0 and current_note_list.size() < 1024 \
-		and elapsed + 1000 >= cur_chart.notes[cur_chart.notes.size()-1]["load_ms"].x:
-		var note = cur_chart.notes.pop_front()
-		current_note_list.append(note)
 	
 	# TODO
 	notes.draw_list = cur_chart.note_draw_data
