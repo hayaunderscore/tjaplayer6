@@ -33,22 +33,21 @@ func _process(delta: float) -> void:
 				position.y = 72
 			hframes = 4
 			texture = gogo_sprite
-			if (song_pos - (delta * curbpm/60)) > last_beat + (60 / curbpm):
+			if (song_pos + 0.016) > last_beat + (60 / curbpm):
 				match gogo_beat:
 					0:
 						frame = 1
 					1:
 						frame = 3
 				gogo_beat = wrap(gogo_beat+1, 0, 2)
-				last_beat = (song_pos - (delta * curbpm/60))
-			elif song_pos > last_late_beat + (60 / curbpm):
+			if song_pos > last_beat + (60 / curbpm):
 				match gogo2_beat:
 					0:
 						frame = 0
 					1:
 						frame = 2
 				gogo2_beat = wrap(gogo2_beat+1, 0, 2)
-				last_late_beat = song_pos
+				last_beat = song_pos
 		2: # 10 combo
 			hframes = 1
 			texture = combo_sprite

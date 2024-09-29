@@ -79,7 +79,7 @@ func preamble_timeout() -> void:
 func auto_play():
 	if not autoplay: return
 	# In reverse to handle removing these within the loop
-	for i in range(min(current_note_list.size()-1, 1024), -1, -1):
+	for i in range(min(current_note_list.size()-1, 512), -1, -1):
 		var note: Dictionary = current_note_list[i]
 		# Look, we can't detect if we should hit if we don't have one.
 		if not note.has("time"): continue
@@ -123,7 +123,7 @@ func auto_play():
 		current_note_list.remove_at(i)
 		var dr = cur_chart.note_draw_data.find(note)
 		if dr != -1 and type < 5: 
-			if $Notes.note_sprites[type] != null:
+			if $Notes.note_sprites[type] != null and soul_curve.get_child_count() < 128:
 				var spr: Sprite2D = Sprite2D.new()
 				spr.texture = $Notes.note_sprites[type]
 				var pathfind: PathFollow2D = PathFollow2D.new()
@@ -155,6 +155,8 @@ func handle_play_events():
 var last_current_beat: float = 0.0
 
 func _physics_process(delta: float) -> void:
+	$FPS.text = str(Engine.get_frames_per_second())
+	
 	if not cur_chart: return
 	elapsed = audio.get_playback_position() + AudioServer.get_time_since_last_mix()
 	# Compensate for output latency.

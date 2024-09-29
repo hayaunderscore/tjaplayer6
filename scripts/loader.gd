@@ -116,6 +116,7 @@ func parse_tja(path: String):
 	var disable_scroll: bool = false
 	
 	var current_negative_delay: float = 0
+	var current_delay: float = 0
 	
 	while file.get_position() < file.get_length():
 		# Current line
@@ -302,8 +303,8 @@ func parse_tja(path: String):
 				"#GOGOEND":
 					cur_chart.notes.append({"time": time, "scroll": Vector2(cur_scroll, cur_scrolly), "note": ChartData.NoteType.GOGOEND, "load_ms": Vector2.ZERO, "ppf": Vector2.ZERO, "negative_delay": 0})
 				_:
+					# Somehow
 					if l.begins_with("#"):
-						## Comment
 						if l.begins_with("#BARLINEOFF"):
 							barlines = false
 						elif l.begins_with("#BARLINEON"):
@@ -314,17 +315,18 @@ func parse_tja(path: String):
 							add_bpm_change.call(time, cur_bpm, cur_chart)
 						command_value = _find_value(line, "#DELAY")
 						if command_value:
+							# current_delay = float(command_value)
+							if float(command_value) > 0 and bemani_scroll:
+								add_bpm_change.call(time, 0, cur_chart)
 							time += float(command_value)
-							# current_negative_delay += abs(float(command_value))
-							if float(command_value) > 0:
+							if float(command_value) > 0 and bemani_scroll:
+								add_bpm_change.call(time, cur_bpm, cur_chart)
 								add_positive_delay.call(time, float(command_value), cur_chart)
 							cur_chart.command_log.append({"time": time, "com": ChartData.CommandType.DELAY, "val1": command_value})
 						command_value = _find_value(line, "#MEASURE")
 						if command_value:
-							## Comment
 							var line_data := command_value.split("/")
 							cur_meter = (4 * float(line_data[0])) / float(line_data[1])
-							# print("measure found")
 							cur_chart.command_log.append({"time": time, "com": ChartData.CommandType.MEASURE, "val1": cur_meter})
 						command_value = _find_value(line, "#SCROLL")
 						if command_value and not disable_scroll:
