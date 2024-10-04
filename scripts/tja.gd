@@ -12,7 +12,7 @@ var head_scroll: float = 1.0
 ## TIMING
 var start_bpm: float = 120.0
 var offset: float = 0.0
-var wave: AudioStreamOggVorbis
+var wave: AudioStreamOggVorbis = AudioStreamOggVorbis.load_from_file("res://snd/silence.ogg")
 
 ## CHARTS
 var chartinfo: Array[ChartData]

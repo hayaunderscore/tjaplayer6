@@ -35,7 +35,8 @@ enum CommandType {
 	BPMCHANGE,
 	MEASURE,
 	DELAY,
-	SCROLL
+	SCROLL,
+	SPEED
 }
 
 var course: int = CourseType.ONI
@@ -51,6 +52,7 @@ var disable_scroll: bool = false
 # Format for these goes like this
 # {time_in_ms, scroll, type_of_note, big_note}
 var notes: Array[Dictionary]
+var specil: Array[Dictionary]
 # {command_type, value1, value2}
 var command_log: Array[Dictionary]
 var bpm_log: Array[Dictionary]

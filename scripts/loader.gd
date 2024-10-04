@@ -77,7 +77,48 @@ func parse_complex_number_simple(s: String):
 				out.x += item
 	
 	return out
+
+var se_notes: Array = [
+	null,
+	[preload("res://gfx/notes/se/don_m_1.png"), preload("res://gfx/notes/se/don_m_2.png"), preload("res://gfx/notes/se/don_m_3.png")],
+	[preload("res://gfx/notes/se/kat_m_1.png"), preload("res://gfx/notes/se/kat_m_2.png")],
+	preload("res://gfx/notes/se/don_m_4.png"),
+	preload("res://gfx/notes/se/kat_m_3.png"),
+	preload("res://gfx/notes/se/roll_m_1.png"),
+	preload("res://gfx/notes/se/roll_m_2.png"),
+	preload("res://gfx/notes/se/geki_m.png"),
+	null,
+	null
+]
+
+func get_se_note(note_list: Array[Dictionary], measure_ms: float, note: Dictionary, ms: float):
+	if note["note"] >= 999: return
+	if note_list.size() > 1:
+		var last_note: Dictionary = note_list[-2]
+		if last_note["note"] in [1, 2]:
+			if ms - last_note["time"] < (measure_ms/8):
+				last_note["senote"] = se_notes[last_note["note"]][1]
+			else:
+				last_note["senote"] = se_notes[last_note["note"]][0]
+		else:
+			last_note["senote"] = se_notes[last_note["note"]]
+		# Why the fuck does don have 3 different fucking note phonetizations
+		if note_list.size() > 3:
+			if note_list[-4]["note"] == 1 and note_list[-3]["note"] == 1 and note_list[-2]["note"] == 1:
+				if (note_list[-3]["time"] - note_list[-4]["time"] < (measure_ms/8)) and (note_list[-2]["time"] - note_list[-3]["time"] < (measure_ms/8)):
+					if note_list.size() > 5:
+						if (note_list[-4]["time"] - note_list[-5]["time"] >= (measure_ms/8)) and (note_list[-1]["time"] - note_list[-2]["time"] >= (measure_ms/8)):
+							note_list[-3]["senote"] = se_notes[note_list[-3]["note"]][2]
+					else:
+						note_list[-3]["senote"] = se_notes[note_list[-3]["note"]][2]
+	else:
+		note["senote"] = se_notes[note["note"]]
 	
+	if note["note"] in [1, 2]:
+		note["senote"] = se_notes[note["note"]][0]
+	else:
+		note["senote"] = se_notes[note["note"]]
+
 func parse_tja(path: String):
 	print("Parsing tja on %s....." % path)
 	if not FileAccess.file_exists(path):
@@ -117,10 +158,23 @@ func parse_tja(path: String):
 	
 	var current_negative_delay: float = 0
 	var current_delay: float = 0
+	var locked_delay: bool = true
+	var last_dummy_delay: float = 0.0
+	
+	# Jiro 2 0.98 (not to be confused with Jiro 1 2.92) has some different behavior
+	# Especially regarding #DELAY
+	# Handle these with a specific comment added in the tja tile
+	# //JIRO2_COMPAT
+	var jiro2_compat: bool = false
 	
 	while file.get_position() < file.get_length():
 		# Current line
 		var line: String = file.get_line().strip_edges()
+		
+		# Jiro2 compatibility, disable specific features
+		if line.begins_with("//JIRO2_COMPAT"):
+			jiro2_compat = true
+			
 		# Empty or comment
 		if line.is_empty() or line.begins_with("//"):
 			continue
@@ -150,11 +204,6 @@ func parse_tja(path: String):
 				var last_bpm_change: Dictionary = current_chart.positive_delay_log[current_chart.positive_delay_log.size()-1]
 				last_bpm_change["duration"] = (added_time) - last_bpm_change["time"]
 			# print("uhhh beat duration ", last_bpm_change["duration"], " and in beats ", last_bpm_change["beat_duration"])
-			current_chart.command_log.append({
-				"time": added_time, 
-				"com": ChartData.CommandType.DELAY, 
-				"val1": added_delay
-			})
 			current_chart.positive_delay_log.append({
 				"time": added_time,
 				"delay": added_delay,
@@ -299,9 +348,9 @@ func parse_tja(path: String):
 		for l in measures:
 			match l:
 				"#GOGOSTART":
-					cur_chart.notes.append({"time": time, "scroll": Vector2(cur_scroll, cur_scrolly), "note": ChartData.NoteType.GOGOSTART, "load_ms": Vector2.ZERO, "ppf": Vector2.ZERO, "negative_delay": 0})
+					cur_chart.specil.append({"time": time, "scroll": Vector2(cur_scroll, cur_scrolly), "note": ChartData.NoteType.GOGOSTART, "load_ms": Vector2.ZERO, "ppf": Vector2.ZERO, "negative_delay": 0})
 				"#GOGOEND":
-					cur_chart.notes.append({"time": time, "scroll": Vector2(cur_scroll, cur_scrolly), "note": ChartData.NoteType.GOGOEND, "load_ms": Vector2.ZERO, "ppf": Vector2.ZERO, "negative_delay": 0})
+					cur_chart.specil.append({"time": time, "scroll": Vector2(cur_scroll, cur_scrolly), "note": ChartData.NoteType.GOGOEND, "load_ms": Vector2.ZERO, "ppf": Vector2.ZERO, "negative_delay": 0})
 				_:
 					# Somehow
 					if l.begins_with("#"):
@@ -309,25 +358,35 @@ func parse_tja(path: String):
 							barlines = false
 						elif l.begins_with("#BARLINEON"):
 							barlines = true
+						## #BPMCHANGE <float-value> (e.g. #BPMCHANGE 320)
 						var command_value := _find_value(line, "#BPMCHANGE")
 						if command_value:
 							cur_bpm = float(command_value)
 							add_bpm_change.call(time, cur_bpm, cur_chart)
+						## #DELAY <float-value> (e.g. #DELAY 1, #DELAY -0.5)
 						command_value = _find_value(line, "#DELAY")
 						if command_value:
 							# current_delay = float(command_value)
-							if float(command_value) > 0 and bemani_scroll:
+							if float(command_value) > 0 and not jiro2_compat:
 								add_bpm_change.call(time, 0, cur_chart)
 							time += float(command_value)
-							if float(command_value) > 0 and bemani_scroll:
+							if float(command_value) > 0 and not jiro2_compat:
 								add_bpm_change.call(time, cur_bpm, cur_chart)
 								add_positive_delay.call(time, float(command_value), cur_chart)
 							cur_chart.command_log.append({"time": time, "com": ChartData.CommandType.DELAY, "val1": command_value})
+						## #TDELAY <float-value> (e.g. #TDELAY 1, #TDELAY -0.5)
+						command_value = _find_value(line, "#TDELAY")
+						if command_value:
+							# TDELAY acts more like how DELAY does in TJAPlayer2 for PC
+							time += float(command_value)
+						## #MEASURE <float-value>/<float-value> (e.g. #MEASURE 14/16)
 						command_value = _find_value(line, "#MEASURE")
 						if command_value:
 							var line_data := command_value.split("/")
 							cur_meter = (4 * float(line_data[0])) / float(line_data[1])
 							cur_chart.command_log.append({"time": time, "com": ChartData.CommandType.MEASURE, "val1": cur_meter})
+						## #SCROLL <float-value> (e.g. #SCROLL 1.5)
+						## #SCROLL <float-complex-number-value> (e.g. #SCROLL 1+1i, #SCROLL -0.5i)
 						command_value = _find_value(line, "#SCROLL")
 						if command_value and not disable_scroll:
 							# Normal scroll
@@ -342,11 +401,74 @@ func parse_tja(path: String):
 								cur_scroll = vec.x
 								cur_scrolly = vec.y
 								cur_chart.command_log.append({"time": time, "com": ChartData.CommandType.SCROLL, "val1": float(cur_scroll), "val2": float(cur_scrolly)})
+						## #SPEED <float-value>
+						## #SPEED <float-complex-number-value>
+						command_value = _find_value(line, "#SPEED")
+						if command_value:
+							var speed: Vector2 = Vector2.ZERO
+							if not command_value.contains("i"):
+								speed.x = float(tjaf.head_scroll) * float(command_value)
+							else:
+								var vec = parse_complex_number_simple(command_value)
+								speed = vec
+							cur_chart.command_log.append({"time": time, "com": ChartData.CommandType.SPEED, "val1": speed, "val2": 0, "ease": "LINEAR"})
+						## #GRADSPEED <float-value>,<time-in-seconds>,<ease>
+						## #GRADSPEED <float-complex-number-value>,<time-in-seconds>,<ease>
+						command_value = _find_value(line, "#GRADSPEED")
+						if command_value:
+							var val: PackedStringArray = command_value.split(",")
+							# ease is optional here
+							if val.size() < 3: val.append("LINEAR")
+							var speed: Vector2 = Vector2.ZERO
+							if not val[0].contains("i"):
+								speed.x = float(tjaf.head_scroll) * float(val[0])
+							else:
+								var vec = parse_complex_number_simple(val[0])
+								speed = vec
+							cur_chart.command_log.append({"time": time, "com": ChartData.CommandType.SPEED, "val1": speed, "val2": float(val[1]), "ease": val[2]})
+						## #DUMMYNOTEADD <note-type>,<position-in-seconds>
+						command_value = _find_value(line, "#DUMMYNOTEADD")
+						if command_value:
+							var split: PackedStringArray = command_value.split(",")
+							var note_type: int = int(split[0])
+							var note_time: float = float(split[1])
+							# TODO remove ppf and loadms we dont need it anymoar
+							var ppf_vec: Vector2 = Vector2(
+								get_pixels_per_frame(cur_bpm * (cur_meter / 4) * cur_scroll, 60, cur_meter, screen_distance),
+								get_pixels_per_frame(cur_bpm * (cur_meter / 4) * cur_scrolly, 60, cur_meter, screen_distance_y)
+							)
+							var no: Dictionary = {
+								"note": note_type,
+								"time": note_time-tjaf.offset,
+								"bpm": cur_bpm,
+								"meter": cur_meter,
+								"scroll": Vector2(cur_scroll, cur_scrolly),
+								"ppf": ppf_vec,
+								"load_ms": Vector2(
+									note_time - (screen_distance / ppf_vec.x / 60),
+									note_time - (screen_distance / ppf_vec.y / 60)
+								),
+								"roll_note": null,
+								"roll_time": 0.0,
+								"roll_loadms": Vector2(-INF, -INF),
+								"balloon_value": 0,
+								"negative_delay": current_negative_delay,
+								"dummy": true,
+								"dummy_offset": last_dummy_delay
+							}
+							get_se_note(cur_chart.notes, 60 * cur_meter / cur_bpm, no, note_time-tjaf.offset)
+							cur_chart.notes.append(no)
+						## #DUMMYOFFSET <time>
+						command_value = _find_value(line, "#DUMMYOFFSET")
+						if command_value:
+							last_dummy_delay = float(command_value)
 					if l.begins_with("#"): continue
 					for idx in line.trim_suffix(","):
+						locked_delay = true
 						var n = int(idx)
 						if n > 0:
 							# Note dictionary....
+							if n == 9: n = 7
 							var ppf_vec: Vector2 = Vector2(
 								get_pixels_per_frame(cur_bpm * (cur_meter / 4) * cur_scroll, 60, cur_meter, screen_distance),
 								get_pixels_per_frame(cur_bpm * (cur_meter / 4) * cur_scrolly, 60, cur_meter, screen_distance_y)
@@ -366,8 +488,9 @@ func parse_tja(path: String):
 								"roll_time": 0.0,
 								"roll_loadms": Vector2(-INF, -INF),
 								"balloon_value": 0,
-								"negative_delay": current_negative_delay,
+								"negative_delay": current_negative_delay
 							}
+							get_se_note(cur_chart.notes, 60 * cur_meter / cur_bpm, no, time)
 							var last_note: Dictionary = {}
 							if n == 8: # Handle
 								var rnoteidx: int = cur_chart.notes.find(cur_note)

@@ -83,19 +83,9 @@ func auto_play():
 		var note: Dictionary = current_note_list[i]
 		# Look, we can't detect if we should hit if we don't have one.
 		if not note.has("time"): continue
+		if note.has("dummy"): continue
 		var type: int = note["note"]
 		var time: float = note["time"]
-		# Handle special notes.
-		if time < elapsed:
-			match type:
-				ChartData.NoteType.GOGOSTART:
-					don_chan.state = 1
-					don_chan.gogo_beat = 0
-					don_chan.gogo2_beat = 0
-					current_note_list.remove_at(i)
-				ChartData.NoteType.GOGOEND:
-					don_chan.state = 0
-					current_note_list.remove_at(i)
 		# Do not include special notes from now on.
 		if type >= 999: continue
 		# Should we register a hit?
@@ -150,7 +140,40 @@ func handle_play_events():
 		match type:
 			ChartData.CommandType.BPMCHANGE:
 				current_bpm = event["val1"]
+			ChartData.CommandType.SPEED:
+				var tween = create_tween()
+				tween.set_ease(Tween.EASE_IN_OUT)
+				match event["ease"]:
+					"LINEAR":
+						pass
+					"SINE":
+						tween.set_trans(Tween.TRANS_SINE)
+					"EXPO":
+						tween.set_trans(Tween.TRANS_EXPO)
+					"CUBIC":
+						tween.set_trans(Tween.TRANS_CUBIC)
+					"ELASTIC":
+						tween.set_trans(Tween.TRANS_ELASTIC)
+					"QUAD":
+						tween.set_trans(Tween.TRANS_QUAD)
+				tween.tween_property(notes, "speed_multiplier", event["val1"], event["val2"])
 		cur_chart.command_log.remove_at(i)
+	for i in range(cur_chart.specil.size()-1, -1, -1):
+		var event: Dictionary = cur_chart.specil[i]
+		# Look, we can't detect if we should hit if we don't have one.
+		if not event.has("time"): continue
+		var type: int = event["note"]
+		var time: float = event["time"]
+		# Handle special notes.
+		if time < elapsed:
+			match type:
+				ChartData.NoteType.GOGOSTART:
+					don_chan.state = 1
+					don_chan.gogo_beat = 0
+					don_chan.gogo2_beat = 0
+				ChartData.NoteType.GOGOEND:
+					don_chan.state = 0
+			cur_chart.specil.remove_at(i)
 
 var last_current_beat: float = 0.0
 
@@ -168,7 +191,7 @@ func _physics_process(delta: float) -> void:
 	
 	last_current_beat = current_beat
 	current_beat = TJA.calculate_beat_from_ms(elapsed, cur_chart.bpm_log)
-	$CurrentBeatLabel.text = "Current beat: %.3f" % current_beat
+	$CurrentBeatLabel.text = "Current beat: %.3f\nCurrent time: %.3f" % [current_beat, elapsed]
 	
 	# DON CHAN #
 	don_chan.curbpm = max(0, current_bpm)
@@ -182,6 +205,7 @@ func _physics_process(delta: float) -> void:
 	notes.time = elapsed
 	notes.current_beat = current_beat
 	notes.bemani_scroll = cur_chart.bemani_scroll
+	notes.combo_anim = (combo >= 50)
 	
 	# Handle auto-play (enabled by default...)
 	auto_play()
