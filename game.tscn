@@ -1,7 +1,8 @@
-[gd_scene load_steps=27 format=3 uid="uid://cqrjctcrfhnv"]
+[gd_scene load_steps=28 format=3 uid="uid://cqrjctcrfhnv"]
 
 [ext_resource type="Script" path="res://game.gd" id="1_kakou"]
 [ext_resource type="AudioStream" uid="uid://2mhf4s1a821v" path="res://snd/dong.wav" id="2_3pvjb"]
+[ext_resource type="Texture2D" uid="uid://6jd6bkpnjy7d" path="res://gfx/bg/bg.png" id="2_5wflp"]
 [ext_resource type="AudioStream" uid="uid://btg723iy2xxyw" path="res://snd/ka.wav" id="3_6stb0"]
 [ext_resource type="FontVariation" uid="uid://b7ivtij2wrbmp" path="res://gfx/number/combo_normal.tres" id="4_6vo0a"]
 [ext_resource type="Texture2D" uid="uid://dyn73x0ysqmld" path="res://gfx/bg/bg_2_p1.png" id="5_rj1pq"]
@@ -36,6 +37,17 @@ point_count = 3
 script = ExtResource("1_kakou")
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
+
+[node name="Parallax2D2" type="Parallax2D" parent="."]
+z_index = -2048
+repeat_size = Vector2(395, 0)
+autoscroll = Vector2(-32, 0)
+repeat_times = 2
+
+[node name="Sprite2D2" type="Sprite2D" parent="Parallax2D2"]
+position = Vector2(395, 96)
+texture = ExtResource("2_5wflp")
+centered = false
 
 [node name="Parallax2D" type="Parallax2D" parent="."]
 z_index = -2048
@@ -229,14 +241,10 @@ offset_right = 40.0
 offset_bottom = 283.0
 
 [node name="FPS" type="Label" parent="."]
-anchors_preset = 2
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 591.0
-offset_top = 457.0
+offset_left = 619.0
+offset_top = 463.0
 offset_right = 640.0
 offset_bottom = 480.0
-grow_vertical = 0
 size_flags_horizontal = 8
 size_flags_vertical = 8
 theme_override_fonts/font = ExtResource("25_ule7g")

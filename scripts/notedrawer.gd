@@ -115,7 +115,7 @@ func _draw() -> void:
 						var rect: Rect2 = Rect2(Vector2(dist, -roll_ends[last_type].get_height()/2), Vector2(roll_ends[last_type].get_width(), roll_ends[last_type].get_height())).abs()
 						draw_texture_rect(roll_ends[last_type], rect, true, col)
 					# Draw se note
-					var rect = Rect2(-Vector2(-roll_ends[last_type].get_width()/4, -36*sign(last_note["scroll"].x)), Vector2(dist, roll_se.get_height())).abs()
+					var rect = Rect2(-Vector2(-roll_ends[last_type].get_width()/4, -36 if sign(last_note["scroll"].x) > 0 else 36*2), Vector2(dist, roll_se.get_height())).abs()
 					draw_texture_rect(roll_se, rect, true, col)
 					# Reset when done >:(
 					draw_set_transform(Vector2.ZERO)

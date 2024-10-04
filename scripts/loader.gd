@@ -80,8 +80,8 @@ func parse_complex_number_simple(s: String):
 
 var se_notes: Array = [
 	null,
-	[preload("res://gfx/notes/se/don_m_1.png"), preload("res://gfx/notes/se/don_m_2.png"), preload("res://gfx/notes/se/don_m_3.png")],
-	[preload("res://gfx/notes/se/kat_m_1.png"), preload("res://gfx/notes/se/kat_m_2.png")],
+	[preload("res://gfx/notes/se/don_m_3.png"), preload("res://gfx/notes/se/don_m_1.png"), preload("res://gfx/notes/se/don_m_2.png")],
+	[preload("res://gfx/notes/se/kat_m_2.png"), preload("res://gfx/notes/se/kat_m_1.png")],
 	preload("res://gfx/notes/se/don_m_4.png"),
 	preload("res://gfx/notes/se/kat_m_3.png"),
 	preload("res://gfx/notes/se/roll_m_1.png"),
@@ -490,7 +490,6 @@ func parse_tja(path: String):
 								"balloon_value": 0,
 								"negative_delay": current_negative_delay
 							}
-							get_se_note(cur_chart.notes, 60 * cur_meter / cur_bpm, no, time)
 							var last_note: Dictionary = {}
 							if n == 8: # Handle
 								var rnoteidx: int = cur_chart.notes.find(cur_note)
@@ -504,6 +503,7 @@ func parse_tja(path: String):
 							if n == 8:
 								cur_note["roll_note"] = last_note
 							cur_chart.notes.append(cur_note)
+							get_se_note(cur_chart.notes, 60 * cur_meter / cur_bpm, no, time)
 						time += 60 * (cur_meter / notes_in_measure) / cur_bpm
 		
 		# No notes? No problem!
