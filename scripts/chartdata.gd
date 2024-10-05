@@ -21,10 +21,10 @@ enum NoteType {
 	END_ROLL,
 	KUSADAMA,
 	# OpenTaiko-Outfox standard
+	SWAP,	# G
 	BOMB,	# C
 	FUSE,	# D
-	ADLIB,	# E
-	SWAP,	# F
+	ADLIB,	# F
 	# Special "notes" (starts at 999)
 	BARLINE = 999, # Yes. A barline is a notetype.
 	GOGOSTART,

@@ -7,6 +7,64 @@ var time: float = 0.0
 
 var note_spr: Texture2D = preload("res://gfx/note_placeholder.png")
 
+## General note sprite atlas
+var note_sprite: Texture2D = preload("res://gfx/notes/notes.png")
+
+const NOTHING_AREA: Vector2 = Vector2(880, 160)
+
+## All notes are assumed to be the same size, 80x80
+const note_region_positions: Array[Vector2] = [
+	NOTHING_AREA,			# Nothing
+	Vector2.ZERO,			# Don
+	Vector2(80, 0),			# Kat
+	Vector2(160, 0),		# Don (Big)
+	Vector2(240, 0),		# Kat (Big)
+	Vector2(320, 0),		# Roll
+	Vector2(560, 0),		# Roll (Big)
+	Vector2(800, 0),		# Balloon
+	NOTHING_AREA,			# Roll/Balloon end
+	Vector2(800, 0),		# Kusadama/Potato
+	Vector2(160, 160),		# Swap
+	Vector2(240, 160),		# Mine
+	Vector2(560, 160),		# Fuse
+]
+
+## Same with rolls
+## 0 - roll body, 1 - roll tail
+const roll_region_positions: Array[Array] = [
+	[NOTHING_AREA, NOTHING_AREA],
+	[NOTHING_AREA, NOTHING_AREA],
+	[NOTHING_AREA, NOTHING_AREA],
+	[NOTHING_AREA, NOTHING_AREA],
+	[NOTHING_AREA, NOTHING_AREA],
+	[Vector2(400, 0), Vector2(480, 0)],
+	[Vector2(640, 0), Vector2(720, 0)],
+	[NOTHING_AREA, NOTHING_AREA],
+	[NOTHING_AREA, NOTHING_AREA],
+	[NOTHING_AREA, NOTHING_AREA],
+	[NOTHING_AREA, NOTHING_AREA],
+	[NOTHING_AREA, NOTHING_AREA],
+	[Vector2(640, 160), Vector2(720, 160)],
+]
+
+## 0 - amount of frames, 1 - offset on the second frame i think
+## TODO redo this
+const note_beat_anims: Array[Array] = [
+	[1, 0],
+	[2, 80],
+	[2, 80],
+	[2, 0],
+	[2, 0],
+	[2, 80],
+	[2, 0],
+	[2, 80],
+	[1, 0],
+	[2, 0],
+	[1, 0],
+	[1, 0],
+	[1, 0],
+]
+
 var note_sprites: Array[Texture2D] = [
 	null,
 	preload("res://gfx/notes/don_1.png"),
@@ -18,6 +76,9 @@ var note_sprites: Array[Texture2D] = [
 	preload("res://gfx/notes/geki_1.png"),
 	preload("res://gfx/notes/roll_5.png"),
 	preload("res://gfx/notes/geki_1.png"),
+	preload("res://gfx/notes/swap_1.png"),
+	preload("res://gfx/notes/don_4.png"),
+	preload("res://gfx/notes/don_4.png")
 ]
 var balloon_end: Texture2D = preload("res://gfx/notes/geki_4.png")
 var roll_ends: Array[Texture2D] = [
@@ -58,12 +119,12 @@ func get_note_position(ms, bpm, scroll: Vector2, beat: float, dummy: bool = fals
 	if bemani_scroll and ms >= time: 
 		return get_note_hbscroll_position(scroll, beat, offset)
 	return Vector2((scroll.x * speed_multiplier.x * (530/4) * (bpm / 60)) * (ms - time) + 148 - offset,
-			(scroll.y * speed_multiplier.y * (530/4) * (bpm / 60)) * (ms - time) + 164)
+			(scroll.y * speed_multiplier.y * (530/4) * (bpm / 60)) * (ms - time) + 156)
 
 # scroll_[x/y]_b = {scroll_[x/y] (#HBSCROLL) or [1/0] (#BMSCROLL)} × (px_width_note_field / 4) (#HBSCROLL/#BMSCROLL), or otherwise 0
 func get_note_hbscroll_position(scroll: Vector2, beat: float, offset: float = 0):
 	return Vector2((scroll.x * speed_multiplier.x * (530/4)) * (beat - current_beat) + 148 - offset,
-			(scroll.y * speed_multiplier.y * (530/4)) * (beat - current_beat) + 164)
+			(scroll.y * speed_multiplier.y * (530/4)) * (beat - current_beat) + 156)
 
 var cur_bpm: float = 0.0
 var combo_anim: bool = false
@@ -75,7 +136,7 @@ func _draw() -> void:
 	for i in range(0, bar_list.size(), 1):
 		var note: Dictionary = bar_list[i]
 		var pos = get_note_position(note["time"], note["bpm"], note["scroll"], note["beat_position"])
-		draw_set_transform(pos, pos.angle_to_point(Vector2(148, 164)))
+		draw_set_transform(pos, pos.angle_to_point(Vector2(148, 156)))
 		draw_texture_rect(bar_line, Rect2(Vector2(0, -bar_line.get_height()/2), Vector2(bar_line.get_width(), bar_line.get_height())),
 			false)
 	
@@ -87,13 +148,12 @@ func _draw() -> void:
 		var pos = get_note_position(note["time"], note["bpm"], note["scroll"], note["beat_position"], note.has("dummy"), note.get("dummy_offset", 0))
 		if pos.x > 640+80 and note["note"] != 8: continue
 		if (note["note"] < note_sprites.size() and note_sprites[note["note"]] != null) or note["note"] == 999:
-			var spr: Texture2D
-			if note["note"] < 999: spr = note_sprites[note["note"]]
-			if combo_anim and combo50_anims[note["note"]] != null:
-				spr = combo50_anims[note["note"]][abs(floori(current_beat*4))%combo50_anims[note["note"]].size()]
+			var atlas_yoffset: float = 0.0
+			if combo_anim:
+				atlas_yoffset = abs(floori(current_beat*4))%note_beat_anims[note["note"]][0] * 80
 			if note["note"] == ChartData.NoteType.BALLOON:
-				draw_texture_rect(balloon_end, Rect2(pos + Vector2(80, 0) - (Vector2(spr.get_width()/2, spr.get_height()/2) * note_scale), Vector2(spr.get_width(), spr.get_height()) * note_scale),
-					false, col)
+				draw_texture_rect_region(note_sprite, Rect2(pos + (Vector2(80, 0)) - (Vector2(40, 40) * note_scale), Vector2(80, 80) * note_scale),
+						Rect2(note_region_positions[7] + Vector2(80, 0), Vector2(80, 80)), col)
 			match note["note"]:
 				ChartData.NoteType.END_ROLL:
 					var last_note: Dictionary = note["roll_note"]
@@ -106,26 +166,27 @@ func _draw() -> void:
 					var last_pos: Vector2 = get_note_position(last_note["time"], last_note["bpm"], last_note["scroll"], last_note["beat_position"], false, note.get("dummy_offset", 0))
 					draw_set_transform(last_pos, last_pos.angle_to_point(pos))
 					var dist: float = last_pos.distance_to(pos)
+					var roll_body: Vector2 = roll_region_positions[last_note["note"]][0]
+					var roll_tail: Vector2 = roll_region_positions[last_note["note"]][1]
 					# Draw tail body
-					if roll_bodies[last_type] != null:
-						var rect: Rect2 = Rect2(-Vector2(0, roll_bodies[last_type].get_height()/2), Vector2(dist+1, roll_bodies[last_type].get_height())).abs()
-						draw_texture_rect(roll_bodies[last_type], rect, true, col)
+					var rect = Rect2(-Vector2(0, 40), Vector2(dist-40, 80)).abs()
+					draw_texture_rect_region(note_sprite, rect, Rect2(roll_body, Vector2(80, 80)), col)
 					# Draw tail end
-					if roll_ends[last_type] != null:
-						var rect: Rect2 = Rect2(Vector2(dist, -roll_ends[last_type].get_height()/2), Vector2(roll_ends[last_type].get_width(), roll_ends[last_type].get_height())).abs()
-						draw_texture_rect(roll_ends[last_type], rect, true, col)
+					rect = Rect2(Vector2(dist-40, -40), Vector2(80, 80)).abs()
+					draw_texture_rect_region(note_sprite, rect, Rect2(roll_tail, Vector2(80, 80)), col)
 					# Draw se note
-					var rect = Rect2(-Vector2(-roll_ends[last_type].get_width()/4, -36 if sign(last_note["scroll"].x) > 0 else 36*2), Vector2(dist, roll_se.get_height())).abs()
+					rect = Rect2(-Vector2(-20, -36 if sign(last_note["scroll"].x) > 0 else 36*2), Vector2(dist-40, roll_se.get_height())).abs()
 					draw_texture_rect(roll_se, rect, true, col)
 					# Reset when done >:(
 					draw_set_transform(Vector2.ZERO)
 				_:
 					draw_set_transform(Vector2.ZERO)
-					draw_texture_rect(spr, Rect2(pos - (Vector2(spr.get_width()/2, spr.get_height()/2) * note_scale), Vector2(spr.get_width(), spr.get_height()) * note_scale),
-						false, col)
+					draw_texture_rect_region(note_sprite, Rect2(pos - (Vector2(40, 40) * note_scale), Vector2(80, 80) * note_scale),
+						Rect2(note_region_positions[note["note"]] + Vector2(0, atlas_yoffset), Vector2(80, 80)), col)
 					var se_note: Texture2D = note["senote"]
-					draw_texture_rect(se_note, Rect2(pos - (Vector2(se_note.get_width()/2, -36) * note_scale), Vector2(se_note.get_width(), se_note.get_height()) * note_scale),
-						false, col)
+					if se_note != null:
+						draw_texture_rect(se_note, Rect2(pos - (Vector2(se_note.get_width()/2, -36) * note_scale), Vector2(se_note.get_width(), se_note.get_height()) * note_scale),
+							false, col)
 
 func _process(delta: float) -> void:
 	queue_redraw()

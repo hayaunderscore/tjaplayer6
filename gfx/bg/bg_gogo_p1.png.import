@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dfk8oec8prshb"
-path="res://.godot/imported/chara_p1_1.png-6054a15e95c76031e7e6fdaade5f058b.ctex"
+uid="uid://cde1t3u4rp4wn"
+path="res://.godot/imported/bg_gogo_p1.png-6b29448c87d800fcd71c5c4d692c4dc1.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://gfx/chaea/chara_p1_1.png"
-dest_files=["res://.godot/imported/chara_p1_1.png-6054a15e95c76031e7e6fdaade5f058b.ctex"]
+source_file="res://gfx/bg/bg_gogo_p1.png"
+dest_files=["res://.godot/imported/bg_gogo_p1.png-6b29448c87d800fcd71c5c4d692c4dc1.ctex"]
 
 [params]
 

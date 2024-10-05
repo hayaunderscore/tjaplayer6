@@ -88,6 +88,9 @@ var se_notes: Array = [
 	preload("res://gfx/notes/se/roll_m_2.png"),
 	preload("res://gfx/notes/se/geki_m.png"),
 	null,
+	null,
+	null,
+	null,
 	null
 ]
 
@@ -466,9 +469,13 @@ func parse_tja(path: String):
 					for idx in line.trim_suffix(","):
 						locked_delay = true
 						var n = int(idx)
-						if n > 0:
+						if n > 0 or (idx == 'C' or idx == 'D' or idx == 'G'):
 							# Note dictionary....
 							if n == 9: n = 7
+							# Check for outfox stuff ig
+							if idx == 'C': n = ChartData.NoteType.BOMB
+							if idx == 'D': n = ChartData.NoteType.FUSE
+							if idx == 'G': n = ChartData.NoteType.SWAP
 							var ppf_vec: Vector2 = Vector2(
 								get_pixels_per_frame(cur_bpm * (cur_meter / 4) * cur_scroll, 60, cur_meter, screen_distance),
 								get_pixels_per_frame(cur_bpm * (cur_meter / 4) * cur_scrolly, 60, cur_meter, screen_distance_y)

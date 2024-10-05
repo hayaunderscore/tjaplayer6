@@ -1,10 +1,11 @@
-[gd_scene load_steps=28 format=3 uid="uid://cqrjctcrfhnv"]
+[gd_scene load_steps=33 format=3 uid="uid://cqrjctcrfhnv"]
 
 [ext_resource type="Script" path="res://game.gd" id="1_kakou"]
 [ext_resource type="AudioStream" uid="uid://2mhf4s1a821v" path="res://snd/dong.wav" id="2_3pvjb"]
 [ext_resource type="Texture2D" uid="uid://6jd6bkpnjy7d" path="res://gfx/bg/bg.png" id="2_5wflp"]
 [ext_resource type="AudioStream" uid="uid://btg723iy2xxyw" path="res://snd/ka.wav" id="3_6stb0"]
 [ext_resource type="FontVariation" uid="uid://b7ivtij2wrbmp" path="res://gfx/number/combo_normal.tres" id="4_6vo0a"]
+[ext_resource type="Texture2D" uid="uid://cde1t3u4rp4wn" path="res://gfx/bg/bg_gogo_p1.png" id="4_ua3b4"]
 [ext_resource type="Texture2D" uid="uid://dyn73x0ysqmld" path="res://gfx/bg/bg_2_p1.png" id="5_rj1pq"]
 [ext_resource type="Texture2D" uid="uid://cx6lsmn8v4frb" path="res://gfx/sfield_bg.png" id="6_68ysk"]
 [ext_resource type="Texture2D" uid="uid://b1chbboi8t381" path="res://gfx/judge_point.png" id="7_ahv1k"]
@@ -18,6 +19,7 @@
 [ext_resource type="Texture2D" uid="uid://68s22crcuj6s" path="res://gfx/taiko/flower.png" id="14_kjxqs"]
 [ext_resource type="Texture2D" uid="uid://dktk4julnybtx" path="res://gfx/taiko/flower_m.png" id="16_g6ygr"]
 [ext_resource type="Texture2D" uid="uid://im0dpd6qimgt" path="res://gfx/sfield/sfield_blue.png" id="17_qjmdc"]
+[ext_resource type="Texture2D" uid="uid://bugtf27eb6krc" path="res://gfx/sfield/sfield_gogo.png" id="18_3u58u"]
 [ext_resource type="Texture2D" uid="uid://b3n4es8jv4yi4" path="res://gfx/sfield/sfield_red.png" id="18_lo0vq"]
 [ext_resource type="Texture2D" uid="uid://b7d2tmxd3a3d1" path="res://gfx/sfield/sfield_hit.png" id="19_esi5k"]
 [ext_resource type="Texture2D" uid="uid://b30tpxr8olvle" path="res://gfx/chara/10combo.png" id="20_4hic0"]
@@ -25,11 +27,16 @@
 [ext_resource type="Script" path="res://scripts/chara.gd" id="21_burjm"]
 [ext_resource type="Texture2D" uid="uid://erhqkb3pfwyc" path="res://gfx/chara/idle.png" id="22_vk86d"]
 [ext_resource type="Texture2D" uid="uid://bh6n8w3eboems" path="res://gfx/gauge/soulgauge_hard_p1_1.png" id="23_sikdf"]
+[ext_resource type="Texture2D" uid="uid://dbuoni2kwnw0c" path="res://gfx/sfield/oni_1.png" id="24_rnslj"]
+[ext_resource type="Texture2D" uid="uid://cbva5jry8gqvf" path="res://gfx/sfield/oni_2.png" id="25_ldv62"]
 [ext_resource type="FontFile" uid="uid://cvss1dbjddhcc" path="res://gfx/font/OtomanopeeOne-Regular.ttf" id="25_ule7g"]
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_2cfb4"]
+blend_mode = 2
 
 [sub_resource type="Curve2D" id="Curve2D_pjfov"]
 _data = {
-"points": PackedVector2Array(0, 0, 0, 0, 148, 164, -130.727, 35.0099, 130.727, -35.0099, 394, 31, 0, 0, 0, 0, 604, 40)
+"points": PackedVector2Array(0, 0, 0, 0, 148, 156, -140.84, 16.0891, 140.84, -16.0891, 420, 11, 0, 0, 0, 0, 600, 42)
 }
 point_count = 3
 
@@ -58,10 +65,17 @@ autoscroll = Vector2(-32, 0)
 texture = ExtResource("5_rj1pq")
 centered = false
 
+[node name="GogoEffect" type="Sprite2D" parent="."]
+modulate = Color(1, 1, 1, 0)
+z_index = -2048
+material = SubResource("CanvasItemMaterial_2cfb4")
+texture = ExtResource("4_ua3b4")
+centered = false
+
 [node name="Judgement" type="Sprite2D" parent="."]
 z_index = -257
 texture_filter = 1
-position = Vector2(108, 133)
+position = Vector2(108, 125)
 texture = ExtResource("6_68ysk")
 centered = false
 offset = Vector2(0, -16)
@@ -69,7 +83,7 @@ offset = Vector2(0, -16)
 [node name="JudgePoint" type="Sprite2D" parent="."]
 z_index = -2
 texture_filter = 1
-position = Vector2(148, 164)
+position = Vector2(148, 156)
 texture = ExtResource("7_ahv1k")
 
 [node name="ColorRect" type="ColorRect" parent="."]
@@ -78,10 +92,11 @@ anchor_left = -0.013
 anchor_top = -0.136
 anchor_right = -0.013
 anchor_bottom = -0.136
-offset_top = 230.0
+offset_top = 222.0
 offset_right = 640.0
-offset_bottom = 260.0
+offset_bottom = 252.0
 color = Color(0, 0, 0, 1)
+metadata/_edit_group_ = true
 
 [node name="Title" type="Label" parent="ColorRect"]
 layout_mode = 1
@@ -107,7 +122,7 @@ script = ExtResource("8_fpb7v")
 
 [node name="Taiko" type="Sprite2D" parent="."]
 texture_filter = 1
-position = Vector2(-11, 128)
+position = Vector2(-11, 120)
 texture = ExtResource("9_1vshb")
 centered = false
 offset = Vector2(0, -16)
@@ -135,6 +150,13 @@ offset = Vector2(0, -16)
 
 [node name="SFieldEffects" type="Node2D" parent="Taiko"]
 z_index = -256
+
+[node name="SfieldGogo" type="Sprite2D" parent="Taiko/SFieldEffects"]
+texture_repeat = 2
+position = Vector2(388, 36)
+scale = Vector2(1, 1e-05)
+texture = ExtResource("18_3u58u")
+region_rect = Rect2(0, 0, 538, 75)
 
 [node name="SfieldBlue" type="Sprite2D" parent="Taiko/SFieldEffects"]
 modulate = Color(1, 1, 1, 0)
@@ -198,10 +220,20 @@ stream = ExtResource("2_3pvjb")
 wait_time = 1.5
 one_shot = true
 
+[node name="CourseSymbol" type="Sprite2D" parent="."]
+z_index = -2048
+position = Vector2(228, 63)
+texture = ExtResource("24_rnslj")
+
+[node name="HitEffect" type="Sprite2D" parent="CourseSymbol"]
+modulate = Color(1, 1, 1, 0)
+texture = ExtResource("25_ldv62")
+
 [node name="Chara" type="Sprite2D" parent="."]
 z_index = -2048
-position = Vector2(96, 72)
-texture = ExtResource("20_4hic0")
+position = Vector2(86, 61)
+texture = ExtResource("22_vk86d")
+hframes = 2
 script = ExtResource("21_burjm")
 idle_sprite = ExtResource("22_vk86d")
 gogo_sprite = ExtResource("20_5ys4s")
@@ -209,7 +241,7 @@ combo_sprite = ExtResource("20_4hic0")
 idle_frames = 2
 
 [node name="Soulgauge" type="Sprite2D" parent="."]
-position = Vector2(272, 24)
+position = Vector2(268, 28)
 texture = ExtResource("23_sikdf")
 centered = false
 offset = Vector2(0, -16)

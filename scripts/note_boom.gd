@@ -20,9 +20,9 @@ var note_small: Texture2D = preload("res://gfx/effects/effect_note_1.png")
 var note_big: Texture2D = preload("res://gfx/effects/effect_note_2.png")
 
 var effect_table: Array[Texture2D]
-var effect_delay: float = 0.1
-var note_delay: float = 0.2333
-var effect_opacity: float = 0.5
+var effect_delay: float = 0
+var note_delay: float = 0
+var effect_opacity: float = 1.1
 var note_opacity: float = 1.0
 
 var tween: Tween
@@ -38,13 +38,14 @@ func _ready() -> void:
 	z_index = -1
 	effect_layer = LiteSprite2D.new()
 	effect_layer.z_index = 3
+	effect_layer.scale = Vector2.ONE / 1.5
 	add_child(effect_layer)
 	effect_layer.global_position = global_position
 	match note_type:
 		1, 2:
 			texture = note_small
 			effect_table = effect_small
-		3, 4:
+		_:
 			texture = note_big
 			effect_table = effect_big
 	effect_layer.texture = effect_table[judge]
@@ -61,10 +62,11 @@ func _process(delta: float) -> void:
 	if effect_delay == 0:
 		effect_delay = -1
 		var tween = create_tween()
-		tween.parallel().tween_property(self, "effect_opacity", 0.0, 0.83)
+		tween.parallel().tween_property(self, "effect_opacity", 0.0, 0.8)
+		tween.parallel().tween_property(effect_layer, "scale", Vector2.ONE * 1.125, 0.1)
 	if note_delay == 0:
 		note_delay = -1
 		var tween = create_tween()
-		tween.parallel().tween_property(self, "note_opacity", 0.0, 0.132)
+		tween.parallel().tween_property(self, "note_opacity", 0.0, 0.8)
 	if effect_opacity <= 0.02 and note_opacity <= 0.02:
 		queue_free()

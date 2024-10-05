@@ -76,8 +76,19 @@ func change_title():
 func preamble_timeout() -> void:
 	audio.play()
 
+var rolling: bool = false
+var roll_timer: int = 0.0
+
+func auto_roll():
+	if not rolling: return
+	if roll_timer % 4 == 0:
+		taiko.taiko_input(0, auto_don_side, true)
+		auto_don_side = wrapi(auto_don_side+1, 0, 2)
+	roll_timer += 1
+
 func auto_play():
 	if not autoplay: return
+	auto_roll()
 	# In reverse to handle removing these within the loop
 	for i in range(min(current_note_list.size()-1, 512), -1, -1):
 		var note: Dictionary = current_note_list[i]
@@ -91,11 +102,12 @@ func auto_play():
 		# Should we register a hit?
 		if time >= elapsed: continue
 		# Not a roll note
-		if type < 5:
+		if type < 5 or type == 10:
 			combo += 1
 			taiko.change_combo(combo)
 			if combo > 0 and combo % 10 == 0 and don_chan.state != 1:
 				don_chan.state = 2
+			$CourseSymbol/HitEffect.modulate.a = 1.0
 		match type:
 			1:
 				taiko.taiko_input(0, auto_don_side, true)
@@ -109,24 +121,33 @@ func auto_play():
 			4:
 				taiko.taiko_input(1, 0, true)
 				taiko.taiko_input(1, 1, true)
+			5, 6:
+				rolling = true
+				roll_timer = 0
+			8: 
+				rolling = false
+			ChartData.NoteType.SWAP:
+				taiko.taiko_input(0, auto_don_side, true)
+				taiko.taiko_input(1, auto_kat_side, true)
+				auto_don_side = wrapi(auto_don_side+1, 0, 2)
+				auto_kat_side = wrapi(auto_kat_side+1, 0, 2)
 		# These two are fundamentally the same
 		current_note_list.remove_at(i)
 		var dr = cur_chart.note_draw_data.find(note)
-		if dr != -1 and type < 5: 
+		if dr != -1 and (type < 5 or type == 10): 
 			if $Notes.note_sprites[type] != null and soul_curve.get_child_count() < 128:
 				var spr: Sprite2D = Sprite2D.new()
 				spr.texture = $Notes.note_sprites[type]
 				var pathfind: PathFollow2D = PathFollow2D.new()
 				pathfind.add_child(spr)
 				pathfind.rotates = false
-				pathfind.create_tween().tween_property(pathfind, "progress_ratio", 1.0, 0.65).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+				pathfind.create_tween().tween_property(pathfind, "progress_ratio", 1.0, 0.45)
 				soul_curve.add_child(pathfind)
-				if type < 5:
-					var note_boom: NoteSoulEffect = NoteSoulEffect.new()
-					note_boom.note_type = type
-					note_boom.global_position = Vector2(148, 164)
-					note_boom.z_index = -1
-					add_child(note_boom)
+				var note_boom: NoteSoulEffect = NoteSoulEffect.new()
+				note_boom.note_type = type
+				note_boom.global_position = Vector2(148, 156)
+				note_boom.z_index = -1
+				add_child(note_boom)
 			cur_chart.note_draw_data.remove_at(dr)
 
 func handle_play_events():
@@ -171,8 +192,16 @@ func handle_play_events():
 					don_chan.state = 1
 					don_chan.gogo_beat = 0
 					don_chan.gogo2_beat = 0
+					var tween = create_tween()
+					tween.set_parallel(true)
+					tween.tween_property($GogoEffect, "modulate:a", 1.0, 0.1)
+					tween.tween_property($Taiko/SFieldEffects/SfieldGogo, "scale:y", 1.0, 0.1)
 				ChartData.NoteType.GOGOEND:
 					don_chan.state = 0
+					var tween = create_tween()
+					tween.set_parallel(true)
+					tween.tween_property($GogoEffect, "modulate:a", 0.0, 0.1)
+					tween.tween_property($Taiko/SFieldEffects/SfieldGogo, "scale:y", 0.0, 0.1)
 			cur_chart.specil.remove_at(i)
 
 var last_current_beat: float = 0.0
@@ -192,6 +221,8 @@ func _physics_process(delta: float) -> void:
 	last_current_beat = current_beat
 	current_beat = TJA.calculate_beat_from_ms(elapsed, cur_chart.bpm_log)
 	$CurrentBeatLabel.text = "Current beat: %.3f\nCurrent time: %.3f" % [current_beat, elapsed]
+	
+	$CourseSymbol/HitEffect.modulate.a = max(0, $CourseSymbol/HitEffect.modulate.a-delta*3)
 	
 	# DON CHAN #
 	don_chan.curbpm = max(0, current_bpm)
