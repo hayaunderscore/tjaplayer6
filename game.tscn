@@ -36,7 +36,7 @@ blend_mode = 2
 
 [sub_resource type="Curve2D" id="Curve2D_pjfov"]
 _data = {
-"points": PackedVector2Array(0, 0, 0, 0, 148, 156, -140.84, 16.0891, 140.84, -16.0891, 420, 11, 0, 0, 0, 0, 600, 42)
+"points": PackedVector2Array(0, 0, 0, 0, 148, 156, -140.84, 16.0891, 140.84, -16.0891, 420, 11, 0, 0, 0, 0, 600, 43)
 }
 point_count = 3
 
@@ -241,6 +241,7 @@ combo_sprite = ExtResource("20_4hic0")
 idle_frames = 2
 
 [node name="Soulgauge" type="Sprite2D" parent="."]
+z_index = -1
 position = Vector2(268, 28)
 texture = ExtResource("23_sikdf")
 centered = false

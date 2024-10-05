@@ -79,12 +79,37 @@ func preamble_timeout() -> void:
 var rolling: bool = false
 var roll_timer: int = 0.0
 
+var current_balloon_note: Dictionary
+
 func auto_roll():
 	if not rolling: return
 	if roll_timer % 4 == 0:
 		taiko.taiko_input(0, auto_don_side, true)
 		auto_don_side = wrapi(auto_don_side+1, 0, 2)
 	roll_timer += 1
+
+func auto_balloon():
+	pass
+
+var soul_effect: Texture2D = preload("res://gfx/soul/soul_effect.png")
+
+# TODO not accurate
+func spawn_gauge_effect():
+	var spr: Sprite2D = Sprite2D.new()
+	spr.texture = soul_effect
+	spr.modulate = Color(Color.YELLOW, 0.8)
+	spr.global_position = Vector2(600, 43)
+	spr.scale = Vector2.ZERO
+	spr.z_index = -1
+	var tween: Tween = spr.create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(spr, "scale", Vector2.ONE, 0.3)
+	tween.tween_property(spr, "modulate", Color(Color.ORANGE_RED, 0.8), 0.3)
+	tween.tween_property(spr, "rotation_degrees", 45, 0.3)
+	tween.tween_interval(0.3)
+	tween.set_parallel(false)
+	tween.tween_callback(spr.queue_free)
+	add_child(spr)
 
 func auto_play():
 	if not autoplay: return
@@ -141,7 +166,11 @@ func auto_play():
 				var pathfind: PathFollow2D = PathFollow2D.new()
 				pathfind.add_child(spr)
 				pathfind.rotates = false
-				pathfind.create_tween().tween_property(pathfind, "progress_ratio", 1.0, 0.45)
+				var ptween = pathfind.create_tween()
+				ptween.tween_property(pathfind, "progress_ratio", 1.0, 0.45)
+				ptween.tween_callback(spawn_gauge_effect)
+				ptween.tween_interval(0.3)
+				ptween.tween_callback(pathfind.queue_free)
 				soul_curve.add_child(pathfind)
 				var note_boom: NoteSoulEffect = NoteSoulEffect.new()
 				note_boom.note_type = type
@@ -194,7 +223,7 @@ func handle_play_events():
 					don_chan.gogo2_beat = 0
 					var tween = create_tween()
 					tween.set_parallel(true)
-					tween.tween_property($GogoEffect, "modulate:a", 1.0, 0.1)
+					tween.tween_property($GogoEffect, "modulate:a", 0.5, 0.1)
 					tween.tween_property($Taiko/SFieldEffects/SfieldGogo, "scale:y", 1.0, 0.1)
 				ChartData.NoteType.GOGOEND:
 					don_chan.state = 0
@@ -242,7 +271,7 @@ func _physics_process(delta: float) -> void:
 	auto_play()
 	
 	# Soul curves
-	for child in soul_curve.get_children():
-		var path: PathFollow2D = child as PathFollow2D
-		if path.progress_ratio >= 1.0:
-			path.queue_free()
+	#for child in soul_curve.get_children():
+		#var path: PathFollow2D = child as PathFollow2D
+		#if path.progress_ratio >= 1.0:
+			#path.queue_free()
