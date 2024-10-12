@@ -1,4 +1,4 @@
-[gd_scene load_steps=33 format=3 uid="uid://cqrjctcrfhnv"]
+[gd_scene load_steps=36 format=3 uid="uid://cqrjctcrfhnv"]
 
 [ext_resource type="Script" path="res://game.gd" id="1_kakou"]
 [ext_resource type="AudioStream" uid="uid://2mhf4s1a821v" path="res://snd/dong.wav" id="2_3pvjb"]
@@ -30,6 +30,8 @@
 [ext_resource type="Texture2D" uid="uid://dbuoni2kwnw0c" path="res://gfx/sfield/oni_1.png" id="24_rnslj"]
 [ext_resource type="Texture2D" uid="uid://cbva5jry8gqvf" path="res://gfx/sfield/oni_2.png" id="25_ldv62"]
 [ext_resource type="FontFile" uid="uid://cvss1dbjddhcc" path="res://gfx/font/OtomanopeeOne-Regular.ttf" id="25_ule7g"]
+[ext_resource type="Texture2D" uid="uid://c1evttt3c3yy" path="res://gfx/judgement.png" id="31_de7vm"]
+[ext_resource type="AudioStream" uid="uid://c4f1pkkmu48ew" path="res://snd/difficulty_select.ogg" id="32_xjkad"]
 
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_2cfb4"]
 blend_mode = 2
@@ -39,6 +41,10 @@ _data = {
 "points": PackedVector2Array(0, 0, 0, 0, 148, 156, -140.84, 16.0891, 140.84, -16.0891, 420, 11, 0, 0, 0, 0, 600, 43)
 }
 point_count = 3
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ig201"]
+atlas = ExtResource("31_de7vm")
+region = Rect2(0, 0, 56, 40)
 
 [node name="Game" type="Node2D"]
 script = ExtResource("1_kakou")
@@ -262,9 +268,10 @@ theme_override_fonts/font = ExtResource("25_ule7g")
 theme_override_font_sizes/font_size = 20
 text = "Welcome to TJAPlayer6!
 Drag and drop a TJA into the window to get started.
-(The game will select Oni/Ura charts only!)
 
 Charts with branches will not work!
+Autoplay can be enabled via F1.
+Controls are DFJK, as per usual. No controller support!
 
 This is still a WIP, so some things may be broken!"
 horizontal_alignment = 1
@@ -287,4 +294,92 @@ text = "60"
 horizontal_alignment = 2
 vertical_alignment = 2
 
+[node name="JudegScore" type="Sprite2D" parent="."]
+modulate = Color(1, 1, 1, 0)
+z_index = 2048
+position = Vector2(148, 132)
+texture = SubResource("AtlasTexture_ig201")
+
+[node name="Autoplay" type="Label" parent="."]
+visible = false
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = 600.0
+offset_right = 640.0
+offset_bottom = 23.0
+grow_horizontal = 0
+theme_override_fonts/font = ExtResource("25_ule7g")
+text = "AUTOPLAY"
+horizontal_alignment = 2
+
+[node name="Diffilcut" type="Control" parent="."]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 252.0
+offset_right = 640.0
+offset_bottom = 480.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="Diffilcut"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Diffilcut/MarginContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="Easy" type="Button" parent="Diffilcut/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+text = "Easy"
+
+[node name="Normal" type="Button" parent="Diffilcut/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+text = "Normal
+"
+
+[node name="Hard" type="Button" parent="Diffilcut/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+text = "Hard"
+
+[node name="Oni" type="Button" parent="Diffilcut/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+text = "Oni
+"
+
+[node name="Edit" type="Button" parent="Diffilcut/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+text = "Ura Oni / Edit
+"
+
+[node name="Voice" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("32_xjkad")
+
 [connection signal="timeout" from="Timer" to="." method="preamble_timeout"]
+[connection signal="pressed" from="Diffilcut/MarginContainer/VBoxContainer/Easy" to="." method="_on_easy_pressed"]
+[connection signal="pressed" from="Diffilcut/MarginContainer/VBoxContainer/Normal" to="." method="_on_normal_pressed"]
+[connection signal="pressed" from="Diffilcut/MarginContainer/VBoxContainer/Hard" to="." method="_on_hard_pressed"]
+[connection signal="pressed" from="Diffilcut/MarginContainer/VBoxContainer/Oni" to="." method="_on_oni_pressed"]
+[connection signal="pressed" from="Diffilcut/MarginContainer/VBoxContainer/Edit" to="." method="_on_edit_pressed"]

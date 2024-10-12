@@ -11,6 +11,7 @@ var cur_chart: ChartData
 @onready var soul_curve: Path2D = $BaseSoulCurve
 
 @onready var taiko: TaikoDrum = $Taiko
+@onready var voice: AudioStreamPlayer = $Voice
 
 var current_bpm: float = 0.0
 var current_meter: float = 4.0
@@ -21,7 +22,7 @@ var combo: int = 0
 
 var current_note_list: Array[Dictionary]
 
-var autoplay: bool = true
+var autoplay: bool = false
 var auto_don_side: int = 0
 var auto_kat_side: int = 0
 
@@ -41,22 +42,25 @@ func on_drop(path: PackedStringArray):
 		print("No chart detected! Abort!")
 		return
 	audio.stream = cur_tja.wave
-	print("Playing first oni/ura chart in chartinfo array...")
+	voice.play()
+	$Intro.visible = false
+	$Diffilcut.visible = true
+
+func find_chart_and_play(diff: int):
 	for chart in cur_tja.chartinfo:
-		if chart.course == 4:
+		if chart.course == diff:
 			cur_chart = chart
 			break
-	if not cur_chart:
-		for chart in cur_tja.chartinfo:
-			if chart.course == 3:
-				cur_chart = chart
-				break
+	if not cur_chart: return
+	# autoplay = false
 	current_bpm = cur_tja.start_bpm
 	current_note_list.clear()
 	current_note_list = cur_chart.notes
 	elapsed = 0
 	preamble.start()
 	beat = (current_bpm / 60) * cur_tja.offset * 60
+	$Intro.visible = true
+	$Diffilcut.visible = false
 	$ColorRect/Title.text = cur_tja.alttitle
 	# Yes this is deferred since the size doesnt change automatically lmao
 	call_deferred("change_title")
@@ -116,11 +120,86 @@ func spawn_gauge_effect():
 enum JudgeType {
 	GREAT,
 	GOOD,
-	BAD
+	BAD,
+	INVALID
 }
 
-var judge: Texture2D = preload("res://gfx/judgement.png")
+@onready var judge_score: Sprite2D = $JudegScore
+var judge_tween: Tween
 
+var JUDGEMENT_GREAT = 0.042
+var JUDGEMENT_GOOD = 0.075
+var JUDGEMENT_BAD = 0.108
+
+var drumrolls: Array[bool] = [false, false, false, false, false, true, true, true, true, true, false, false, true, false]
+
+func hit_note(type: int, time: float):
+	if drumrolls[type]: return JudgeType.INVALID
+	# Not a roll note
+	var judgetype: int = JudgeType.BAD
+	if time - JUDGEMENT_GREAT <= elapsed and elapsed <= (time + JUDGEMENT_GREAT):
+		judgetype = JudgeType.GREAT
+	elif time - JUDGEMENT_GOOD <= elapsed and elapsed <= (time + JUDGEMENT_GOOD):
+		judgetype = JudgeType.GOOD
+	if type < 5 or type == 10:
+		if judgetype != JudgeType.BAD:
+			combo += 1
+			taiko.change_combo(combo)
+		else:
+			combo = 0
+			taiko.drop_combo()
+		if combo > 0 and combo % 10 == 0 and don_chan.state != 1:
+			don_chan.state = 2
+		if judgetype != JudgeType.BAD:
+			$CourseSymbol/HitEffect.modulate.a = 1.0
+		judge_score.modulate.a = 0
+		judge_score.position.y = 116
+		var tex: AtlasTexture = judge_score.texture as AtlasTexture
+		tex.region.position.y = 40*judgetype
+		if is_instance_valid(judge_tween):
+			judge_tween.stop()
+		judge_tween = create_tween()
+		judge_tween.set_parallel(true)
+		judge_tween.tween_property(judge_score, "modulate:a", 1, 0.05)
+		judge_tween.tween_property(judge_score, "position:y", 104, 0.1)
+		judge_tween.set_parallel(false)
+		judge_tween.tween_interval(0.2)
+		judge_tween.tween_property(judge_score, "modulate:a", 0, 0.1)
+	return judgetype
+
+func remove_note_and_add_to_arc(note: Dictionary, result: int):
+	var dr = cur_chart.note_draw_data.find(note)
+	var type: int = note["note"]
+	if dr != -1: 
+		if $Notes.note_sprites[type] != null and soul_curve.get_child_count() < 32 and result != JudgeType.BAD:
+			var spr: Sprite2D = Sprite2D.new()
+			spr.texture = $Notes.note_sprites[type]
+			if type == 3 or type == 4:
+				var dai_effect: AnimatedSprite2D = AnimatedSprite2D.new()
+				dai_effect.sprite_frames = dai_frames
+				dai_effect.play(str(result))
+				dai_effect.offset = Vector2(-8, 8)
+				dai_effect.scale = Vector2.ONE * 1.25
+				dai_effect.z_index = -1
+				dai_effect.material = add_blend
+				spr.add_child(dai_effect)
+			var pathfind: PathFollow2D = PathFollow2D.new()
+			pathfind.add_child(spr)
+			pathfind.rotates = false
+			var ptween = pathfind.create_tween()
+			ptween.tween_property(pathfind, "progress_ratio", 1.0, 0.5)
+			ptween.tween_callback(spawn_gauge_effect)
+			ptween.tween_interval(0.3)
+			ptween.tween_callback(pathfind.queue_free)
+			soul_curve.add_child(pathfind)
+			var note_boom: NoteSoulEffect = NoteSoulEffect.new()
+			note_boom.note_type = type
+			note_boom.global_position = notes.judgement_position
+			note_boom.z_index = -1
+			note_boom.judge = result
+			add_child(note_boom)
+		cur_chart.note_draw_data.remove_at(dr)
+	
 func auto_play():
 	if not autoplay: return
 	auto_roll()
@@ -136,13 +215,8 @@ func auto_play():
 		if type >= 999: continue
 		# Should we register a hit?
 		if time >= elapsed: continue
-		# Not a roll note
-		if type < 5 or type == 10:
-			combo += 1
-			taiko.change_combo(combo)
-			if combo > 0 and combo % 10 == 0 and don_chan.state != 1:
-				don_chan.state = 2
-			$CourseSymbol/HitEffect.modulate.a = 1.0
+		var result = hit_note(type, time)
+		if result == JudgeType.INVALID: continue
 		match type:
 			1:
 				taiko.taiko_input(0, auto_don_side, true)
@@ -168,35 +242,81 @@ func auto_play():
 				auto_kat_side = wrapi(auto_kat_side+1, 0, 2)
 		# These two are fundamentally the same
 		current_note_list.remove_at(i)
-		var dr = cur_chart.note_draw_data.find(note)
-		if dr != -1 and (type < 5 or type == 10): 
-			if $Notes.note_sprites[type] != null and soul_curve.get_child_count() < 32:
-				var spr: Sprite2D = Sprite2D.new()
-				spr.texture = $Notes.note_sprites[type]
-				if type == 3 or type == 4:
-					var dai_effect: AnimatedSprite2D = AnimatedSprite2D.new()
-					dai_effect.sprite_frames = dai_frames
-					dai_effect.play(&"default")
-					dai_effect.offset = Vector2(-8, 8)
-					dai_effect.scale = Vector2.ONE * 1.25
-					dai_effect.z_index = -1
-					dai_effect.material = add_blend
-					spr.add_child(dai_effect)
-				var pathfind: PathFollow2D = PathFollow2D.new()
-				pathfind.add_child(spr)
-				pathfind.rotates = false
-				var ptween = pathfind.create_tween()
-				ptween.tween_property(pathfind, "progress_ratio", 1.0, 0.5)
-				ptween.tween_callback(spawn_gauge_effect)
-				ptween.tween_interval(0.3)
-				ptween.tween_callback(pathfind.queue_free)
-				soul_curve.add_child(pathfind)
-				var note_boom: NoteSoulEffect = NoteSoulEffect.new()
-				note_boom.note_type = type
-				note_boom.global_position = notes.judgement_position
-				note_boom.z_index = -1
-				add_child(note_boom)
-			cur_chart.note_draw_data.remove_at(dr)
+		remove_note_and_add_to_arc(note, result)
+
+func handle_input():
+	if autoplay: return
+	if Input.is_action_just_pressed("don_left") or Input.is_action_just_pressed("don_right"):
+		var hit = check_note(1)
+		if Input.is_action_just_pressed("don_left"):
+			taiko.taiko_input(0, 0, hit)
+		if Input.is_action_just_pressed("don_right"):
+			taiko.taiko_input(0, 1, hit)
+	if Input.is_action_just_pressed("ka_left") or Input.is_action_just_pressed("ka_right"):
+		var hit = check_note(2)
+		if Input.is_action_just_pressed("ka_left"):
+			taiko.taiko_input(1, 0, hit)
+		if Input.is_action_just_pressed("ka_right"):
+			taiko.taiko_input(1, 1, hit)
+	if (Input.is_action_just_pressed("don_left") or Input.is_action_just_pressed("don_right")) and \
+	(Input.is_action_just_pressed("ka_left") or Input.is_action_just_pressed("ka_right")):
+		var hit = check_note(10)
+		if Input.is_action_just_pressed("don_left"):
+			taiko.taiko_input(0, 0, hit)
+		if Input.is_action_just_pressed("don_right"):
+			taiko.taiko_input(0, 1, hit)
+		if Input.is_action_just_pressed("ka_left"):
+			taiko.taiko_input(1, 0, hit)
+		if Input.is_action_just_pressed("ka_right"):
+			taiko.taiko_input(1, 1, hit)
+	# Check for unpressed lmao
+	for i in range(min(current_note_list.size()-1, 512), -1, -1):
+		var note: Dictionary = current_note_list[i]
+		# Look, we can't detect if we should hit if we don't have one.
+		if not note.has("time"): continue
+		if note.has("dummy"): continue
+		var type: int = note["note"]
+		var time: float = note["time"]
+		# Do not include special notes from now on.
+		if type >= 999: continue
+		if time > elapsed - JUDGEMENT_BAD: continue
+		var result = hit_note(type, time)
+		if result == JudgeType.INVALID: continue
+		# These two are fundamentally the same
+		current_note_list.remove_at(i)
+		remove_note_and_add_to_arc(note, result)
+
+func check_note(check_type: int):
+	var hit: bool = false
+	# In reverse to handle removing these within the loop
+	for i in range(min(current_note_list.size()-1, 512), -1, -1):
+		var note: Dictionary = current_note_list[i]
+		# Look, we can't detect if we should hit if we don't have one.
+		if not note.has("time"): continue
+		if note.has("dummy"): continue
+		var type: int = note["note"]
+		var time: float = note["time"]
+		# Do not include special notes from now on.
+		if type >= 999: continue
+		if time > elapsed + JUDGEMENT_BAD: continue
+		var old_type: int = type
+		match check_type:
+			1:
+				if type == 3:
+					type = 1
+			2:
+				if type == 4:
+					type = 2
+		if type != check_type: continue
+		var result = hit_note(type, time)
+		type = old_type
+		if result == JudgeType.INVALID: continue
+		# These two are fundamentally the same
+		current_note_list.remove_at(i)
+		remove_note_and_add_to_arc(note, result)
+		hit = true
+		break
+	return hit
 
 func handle_play_events():
 	for i in range(cur_chart.command_log.size()-1, -1, -1):
@@ -280,6 +400,10 @@ var last_current_beat: float = 0.0
 func _physics_process(delta: float) -> void:
 	$FPS.text = str(Engine.get_frames_per_second())
 	
+	if Input.is_action_just_pressed("autoplay"):
+		autoplay = !autoplay
+		$Autoplay.visible = autoplay
+	
 	if not cur_chart: return
 	elapsed = audio.get_playback_position() + AudioServer.get_time_since_last_mix()
 	# Compensate for output latency.
@@ -288,6 +412,7 @@ func _physics_process(delta: float) -> void:
 	elapsed -= preamble.time_left
 	
 	handle_play_events()
+	handle_input()
 	
 	last_current_beat = current_beat
 	current_beat = TJA.calculate_beat_from_ms(elapsed, cur_chart.bpm_log)
@@ -317,3 +442,18 @@ func _physics_process(delta: float) -> void:
 		#var path: PathFollow2D = child as PathFollow2D
 		#if path.progress_ratio >= 1.0:
 			#path.queue_free()
+
+func _on_easy_pressed() -> void:
+	find_chart_and_play(0)
+
+func _on_normal_pressed() -> void:
+	find_chart_and_play(1)
+
+func _on_hard_pressed() -> void:
+	find_chart_and_play(2)
+
+func _on_oni_pressed() -> void:
+	find_chart_and_play(3)
+
+func _on_edit_pressed() -> void:
+	find_chart_and_play(4)
