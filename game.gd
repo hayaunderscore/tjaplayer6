@@ -92,6 +92,8 @@ func auto_balloon():
 	pass
 
 var soul_effect: Texture2D = preload("res://gfx/soul/soul_effect.png")
+var dai_frames: SpriteFrames = preload("res://gfx/effects/dai/dai_effect.tres")
+var add_blend: CanvasItemMaterial = preload("res://gfx/effects/dai/dai_blend.tres")
 
 # TODO not accurate
 func spawn_gauge_effect():
@@ -105,11 +107,19 @@ func spawn_gauge_effect():
 	tween.set_parallel(true)
 	tween.tween_property(spr, "scale", Vector2.ONE, 0.3)
 	tween.tween_property(spr, "modulate", Color(Color.ORANGE_RED, 0.8), 0.3)
-	tween.tween_property(spr, "rotation_degrees", 45, 0.3)
+	tween.tween_property(spr, "rotation_degrees", 60, 0.3)
 	tween.tween_interval(0.3)
 	tween.set_parallel(false)
 	tween.tween_callback(spr.queue_free)
 	add_child(spr)
+
+enum JudgeType {
+	GREAT,
+	GOOD,
+	BAD
+}
+
+var judge: Texture2D = preload("res://gfx/judgement.png")
 
 func auto_play():
 	if not autoplay: return
@@ -160,21 +170,30 @@ func auto_play():
 		current_note_list.remove_at(i)
 		var dr = cur_chart.note_draw_data.find(note)
 		if dr != -1 and (type < 5 or type == 10): 
-			if $Notes.note_sprites[type] != null and soul_curve.get_child_count() < 128:
+			if $Notes.note_sprites[type] != null and soul_curve.get_child_count() < 32:
 				var spr: Sprite2D = Sprite2D.new()
 				spr.texture = $Notes.note_sprites[type]
+				if type == 3 or type == 4:
+					var dai_effect: AnimatedSprite2D = AnimatedSprite2D.new()
+					dai_effect.sprite_frames = dai_frames
+					dai_effect.play(&"default")
+					dai_effect.offset = Vector2(-8, 8)
+					dai_effect.scale = Vector2.ONE * 1.25
+					dai_effect.z_index = -1
+					dai_effect.material = add_blend
+					spr.add_child(dai_effect)
 				var pathfind: PathFollow2D = PathFollow2D.new()
 				pathfind.add_child(spr)
 				pathfind.rotates = false
 				var ptween = pathfind.create_tween()
-				ptween.tween_property(pathfind, "progress_ratio", 1.0, 0.45)
+				ptween.tween_property(pathfind, "progress_ratio", 1.0, 0.5)
 				ptween.tween_callback(spawn_gauge_effect)
 				ptween.tween_interval(0.3)
 				ptween.tween_callback(pathfind.queue_free)
 				soul_curve.add_child(pathfind)
 				var note_boom: NoteSoulEffect = NoteSoulEffect.new()
 				note_boom.note_type = type
-				note_boom.global_position = Vector2(148, 156)
+				note_boom.global_position = notes.judgement_position
 				note_boom.z_index = -1
 				add_child(note_boom)
 			cur_chart.note_draw_data.remove_at(dr)
@@ -207,6 +226,29 @@ func handle_play_events():
 					"QUAD":
 						tween.set_trans(Tween.TRANS_QUAD)
 				tween.tween_property(notes, "speed_multiplier", event["val1"], event["val2"])
+			ChartData.CommandType.REVERSE:
+				var tween = create_tween()
+				tween.set_ease(Tween.EASE_IN_OUT)
+				match event["ease"]:
+					"LINEAR":
+						pass
+					"SINE":
+						tween.set_trans(Tween.TRANS_SINE)
+					"EXPO":
+						tween.set_trans(Tween.TRANS_EXPO)
+					"CUBIC":
+						tween.set_trans(Tween.TRANS_CUBIC)
+					"ELASTIC":
+						tween.set_trans(Tween.TRANS_ELASTIC)
+					"QUAD":
+						tween.set_trans(Tween.TRANS_QUAD)
+				tween.set_parallel(true)
+				var soul_pos: Vector2 = soul_curve.curve.get_point_position(0)
+				var fuck: Callable = func(val): soul_curve.curve.set_point_position(0, val)
+				tween.tween_method(fuck, soul_pos, Vector2(lerp(148, 602, event["val1"]/100), soul_pos.y), event["val2"])
+				tween.tween_property(notes, "reverse_flip", lerp(1, -1, event["val1"]/100), event["val2"])
+				tween.tween_property(judgePoint, "global_position:x", lerp(148, 602, event["val1"]/100), event["val2"])
+				tween.tween_property(notes, "judgement_position:x", lerp(148, 602, event["val1"]/100), event["val2"])
 		cur_chart.command_log.remove_at(i)
 	for i in range(cur_chart.specil.size()-1, -1, -1):
 		var event: Dictionary = cur_chart.specil[i]

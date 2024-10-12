@@ -11,6 +11,8 @@ var don_delay: PackedFloat32Array = [0.0, 0.0]
 var sfield_delay: PackedFloat32Array = [0.0, 0.0, 0.0]
 
 @onready var combo_text: Label = $Combo/ComboText
+@onready var combo_caption: Sprite2D = $Combo/ComboM
+@onready var combo_flower: Sprite2D = $Combo/Flower
 @onready var combo_parent: Node2D = $Combo
 
 var combo_fonts: Array[Font] = [
@@ -58,9 +60,18 @@ func change_combo(combo: int):
 		combo_text.set("theme_override_fonts/font", combo_fonts[1])
 	else:
 		combo_text.set("theme_override_fonts/font", combo_fonts[2])
-	combo_text.scale.y = 1.2
+	combo_text.scale.y = 1.25
 	if combo_text.text.length() > 2:
 		combo_text.scale.x = (3.0 / (combo_text.text.length()))
+	if combo % 100 == 0 and combo >= 100:
+		if is_zero_approx(combo_caption.modulate.a):
+			create_tween().tween_property(combo_caption, "modulate:a", 1.0, 0.35).set_trans(Tween.TRANS_QUAD)
+		combo_flower.modulate.a = 1
+		combo_flower.scale = Vector2.ZERO
+		var tween: Tween = create_tween()
+		tween.tween_property(combo_flower, "scale", Vector2.ONE, 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tween.tween_interval(4.0)
+		tween.tween_property(combo_flower, "modulate:a", 0, 0.25).set_trans(Tween.TRANS_QUAD)
 
 func drop_combo():
 	combo_parent.visible = false
@@ -69,7 +80,7 @@ func drop_combo():
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
-	combo_text.scale.y = max(1, combo_text.scale.y-delta)
+	combo_text.scale.y = max(1, combo_text.scale.y-delta*1.5)
 	for i in range(0, ka.size()):
 		ka_delay[i] = max(0, ka_delay[i]-delta)
 		if ka_delay[i] <= 0:

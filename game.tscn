@@ -152,6 +152,7 @@ offset = Vector2(0, -16)
 z_index = -256
 
 [node name="SfieldGogo" type="Sprite2D" parent="Taiko/SFieldEffects"]
+modulate = Color(1, 1, 1, 0.501961)
 texture_repeat = 2
 position = Vector2(388, 36)
 scale = Vector2(1, 1e-05)
@@ -183,21 +184,22 @@ offset = Vector2(0, -16)
 visible = false
 
 [node name="Flower" type="Sprite2D" parent="Taiko/Combo"]
-position = Vector2(66, 42)
+position = Vector2(65, 40)
 scale = Vector2(1e-05, 1e-05)
 texture = ExtResource("14_kjxqs")
 
 [node name="ComboM" type="Sprite2D" parent="Taiko/Combo"]
-position = Vector2(4, -23)
+modulate = Color(1, 1, 1, 0)
+position = Vector2(4, -18)
 texture = ExtResource("16_g6ygr")
 centered = false
 
 [node name="ComboText" type="Label" parent="Taiko/Combo"]
 texture_filter = 1
 offset_left = -29.0
-offset_top = 6.0
+offset_top = 11.0
 offset_right = 159.0
-offset_bottom = 54.0
+offset_bottom = 59.0
 pivot_offset = Vector2(94, 48)
 theme_override_fonts/font = ExtResource("4_6vo0a")
 text = "000"

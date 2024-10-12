@@ -36,7 +36,8 @@ enum CommandType {
 	MEASURE,
 	DELAY,
 	SCROLL,
-	SPEED
+	SPEED,
+	REVERSE
 }
 
 var course: int = CourseType.ONI

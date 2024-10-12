@@ -89,6 +89,7 @@ var se_notes: Array = [
 	preload("res://gfx/notes/se/geki_m.png"),
 	null,
 	null,
+	preload("res://gfx/notes/se/swap_m.png"),
 	null,
 	null,
 	null
@@ -164,6 +165,9 @@ func parse_tja(path: String):
 	var locked_delay: bool = true
 	var last_dummy_delay: float = 0.0
 	
+	var comment_regex: RegEx = RegEx.new()
+	comment_regex.compile("(\\/\\/)(.+?)(?=[\\n\\r]|\\*\\))")
+	
 	# Jiro 2 0.98 (not to be confused with Jiro 1 2.92) has some different behavior
 	# Especially regarding #DELAY
 	# Handle these with a specific comment added in the tja tile
@@ -181,6 +185,8 @@ func parse_tja(path: String):
 		# Empty or comment
 		if line.is_empty() or line.begins_with("//"):
 			continue
+			
+		line = comment_regex.sub(line+"\n", "").strip_escapes()
 		
 		# Shortcut....
 		var add_bpm_change: Callable = func(added_time: float, added_bpm: float, current_chart: ChartData):
@@ -429,6 +435,16 @@ func parse_tja(path: String):
 								var vec = parse_complex_number_simple(val[0])
 								speed = vec
 							cur_chart.command_log.append({"time": time, "com": ChartData.CommandType.SPEED, "val1": speed, "val2": float(val[1]), "ease": val[2]})
+						## #REVERSE <float-value>,<time-in-seconds>,<ease>
+						## might as well implement ITG modifiers at this point
+						command_value = _find_value(line, "#REVERSE")
+						if command_value:
+							var val: PackedStringArray = command_value.split(",")
+							# ease is optional here
+							if val.size() < 3: val.append("LINEAR")
+							var speed: Vector2 = Vector2.ZERO
+							speed.x = float(val[0])
+							cur_chart.command_log.append({"time": time, "com": ChartData.CommandType.REVERSE, "val1": speed.x, "val2": float(val[1]), "ease": val[2]})
 						## #DUMMYNOTEADD <note-type>,<position-in-seconds>
 						command_value = _find_value(line, "#DUMMYNOTEADD")
 						if command_value:
@@ -466,10 +482,12 @@ func parse_tja(path: String):
 						if command_value:
 							last_dummy_delay = float(command_value)
 					if l.begins_with("#"): continue
+					#print(line.trim_suffix(","))
 					for idx in line.trim_suffix(","):
+						if idx == '/': break
 						locked_delay = true
 						var n = int(idx)
-						if n > 0 or (idx == 'C' or idx == 'D' or idx == 'G'):
+						if n > 0 or (idx == 'C' or idx == 'D' or idx == 'G') and (cur_note["note"] != 5 and cur_note["note"] != 6 and cur_note["note"] != 7):
 							# Note dictionary....
 							if n == 9: n = 7
 							# Check for outfox stuff ig

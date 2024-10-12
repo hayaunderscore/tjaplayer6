@@ -110,6 +110,9 @@ var bar_line: Texture2D = preload("res://gfx/notes/line.png")
 var current_beat: float = 0.0
 var bemani_scroll: bool = false
 var speed_multiplier: Vector2 = Vector2.ONE
+var reverse_flip: float = 1.0
+
+var judgement_position: Vector2 = Vector2(148, 156)
 
 # Thanks to IID/IepIweidieng from the TJADB discord!
 # (note_x, note_y) = scroll_modifier × ((scroll_x_t, scroll_y_t) × (time_note - time_current) + (scroll_x_b, scroll_y_b) × (beat_note - beat_current))
@@ -118,13 +121,13 @@ var speed_multiplier: Vector2 = Vector2.ONE
 func get_note_position(ms, bpm, scroll: Vector2, beat: float, dummy: bool = false, offset: float = 0):
 	if bemani_scroll and ms >= time: 
 		return get_note_hbscroll_position(scroll, beat, offset)
-	return Vector2((scroll.x * speed_multiplier.x * (530/4) * (bpm / 60)) * (ms - time) + 148 - offset,
-			(scroll.y * speed_multiplier.y * (530/4) * (bpm / 60)) * (ms - time) + 156)
+	return Vector2((scroll.x * reverse_flip * speed_multiplier.x * (530/4) * (bpm / 60)) * (ms - time) + judgement_position.x - offset,
+			(scroll.y * speed_multiplier.y * (530/4) * (bpm / 60)) * (ms - time) + judgement_position.y)
 
 # scroll_[x/y]_b = {scroll_[x/y] (#HBSCROLL) or [1/0] (#BMSCROLL)} × (px_width_note_field / 4) (#HBSCROLL/#BMSCROLL), or otherwise 0
 func get_note_hbscroll_position(scroll: Vector2, beat: float, offset: float = 0):
-	return Vector2((scroll.x * speed_multiplier.x * (530/4)) * (beat - current_beat) + 148 - offset,
-			(scroll.y * speed_multiplier.y * (530/4)) * (beat - current_beat) + 156)
+	return Vector2((scroll.x * reverse_flip * speed_multiplier.x * (530/4)) * (beat - current_beat) + judgement_position.x - offset,
+			(scroll.y * speed_multiplier.y * (530/4)) * (beat - current_beat) + judgement_position.y)
 
 var cur_bpm: float = 0.0
 var combo_anim: bool = false
@@ -136,9 +139,13 @@ func _draw() -> void:
 	for i in range(0, bar_list.size(), 1):
 		var note: Dictionary = bar_list[i]
 		var pos = get_note_position(note["time"], note["bpm"], note["scroll"], note["beat_position"])
+		if pos.x < 0: continue
+		if pos.x > 640+80: continue
 		draw_set_transform(pos, pos.angle_to_point(Vector2(148, 156)))
 		draw_texture_rect(bar_line, Rect2(Vector2(0, -bar_line.get_height()/2), Vector2(bar_line.get_width(), bar_line.get_height())),
 			false)
+	
+	draw_set_transform(Vector2.ZERO)
 	
 	for i in range(min(draw_list.size()-1, 512), -1, -1):
 		var note: Dictionary = draw_list[i]
@@ -175,7 +182,10 @@ func _draw() -> void:
 					rect = Rect2(Vector2(dist-40, -40), Vector2(80, 80)).abs()
 					draw_texture_rect_region(note_sprite, rect, Rect2(roll_tail, Vector2(80, 80)), col)
 					# Draw se note
-					rect = Rect2(-Vector2(-20, -36 if sign(last_note["scroll"].x) > 0 else 36*2), Vector2(dist-40, roll_se.get_height())).abs()
+					var se_pos: float = -36
+					if last_pos.angle_to_point(pos) > PI/2:
+						se_pos = 70
+					rect = Rect2(-Vector2(-20, se_pos), Vector2(dist-40, roll_se.get_height())).abs()
 					draw_texture_rect(roll_se, rect, true, col)
 					# Reset when done >:(
 					draw_set_transform(Vector2.ZERO)
