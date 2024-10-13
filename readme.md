@@ -15,6 +15,7 @@ Does not use DTXMania as a base.
 - Scroll and BPM/Measure changes
 - Complex y-scroll, with roll support
 - BMS scroll via `#BMSCROLL` and `#HBSCROLL`
+- Playability (with scoring)
 
 # What doesn't
 
@@ -25,8 +26,6 @@ Does not use DTXMania as a base.
 - Song select
 - Results screen
 - Soul gauge
-- Judgements
-- Playability (currently autoplay only)
 
 # References
 
