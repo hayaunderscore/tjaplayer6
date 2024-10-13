@@ -29,6 +29,9 @@ var auto_kat_side: int = 0
 var beat: float = 0.0
 var current_beat: float = 0.0
 
+var score: int = 0
+@onready var score_text: Label = $Score
+
 func _ready() -> void:
 	get_viewport().get_window().files_dropped.connect(on_drop)
 
@@ -43,6 +46,8 @@ func on_drop(path: PackedStringArray):
 		return
 	audio.stream = cur_tja.wave
 	voice.play()
+	score = 0
+	score_text.text = "0"
 	$Intro.visible = false
 	$Diffilcut.visible = true
 
@@ -52,6 +57,10 @@ func find_chart_and_play(diff: int):
 			cur_chart = chart
 			break
 	if not cur_chart: return
+	ScoreManager.score_mode = cur_chart.scoremode
+	ScoreManager.score_init = cur_chart.scoreinit[0]
+	ScoreManager.score_diff = cur_chart.scorediff
+	print(ScoreManager.calc_max_score_and_combo(cur_chart.notes))
 	# autoplay = false
 	current_bpm = cur_tja.start_bpm
 	current_note_list.clear()
@@ -82,6 +91,7 @@ func preamble_timeout() -> void:
 
 var rolling: bool = false
 var roll_timer: int = 0.0
+var roll_mmm: int = 0
 
 var current_balloon_note: Dictionary
 
@@ -90,6 +100,18 @@ func auto_roll():
 	if roll_timer % 4 == 0:
 		taiko.taiko_input(0, auto_don_side, true)
 		auto_don_side = wrapi(auto_don_side+1, 0, 2)
+		if not last_roll_note.is_empty():
+			if last_roll_note["note"] == 5:
+				remove_note_and_add_to_arc(last_roll_note, JudgeType.GREAT, true, 1)
+				handle_score_animation(ScoreManager.calc_roll(score, 2, gogo_time_active))
+			elif last_roll_note["note"] == 6:
+				remove_note_and_add_to_arc(last_roll_note, JudgeType.GREAT,true, 3)
+				handle_score_animation(ScoreManager.calc_roll(score, 3, gogo_time_active))
+			if last_roll_note["roll_color_mod"] != Color.RED:
+				last_roll_note["roll_color_mod"].r = lerpf(1, Color.RED.r, 0.25*roll_mmm)
+				last_roll_note["roll_color_mod"].g = lerpf(1, Color.RED.g, 0.25*roll_mmm)
+				last_roll_note["roll_color_mod"].b = lerpf(1, Color.RED.b, 0.25*roll_mmm)
+		roll_mmm += 1
 	roll_timer += 1
 
 func auto_balloon():
@@ -121,7 +143,8 @@ enum JudgeType {
 	GREAT,
 	GOOD,
 	BAD,
-	INVALID
+	INVALID,
+	ROLL
 }
 
 @onready var judge_score: Sprite2D = $JudegScore
@@ -132,9 +155,47 @@ var JUDGEMENT_GOOD = 0.075
 var JUDGEMENT_BAD = 0.108
 
 var drumrolls: Array[bool] = [false, false, false, false, false, true, true, true, true, true, false, false, true, false]
+var last_roll_note: Dictionary
+
+var visual_score: int = 0
+
+@onready var base_position: Vector2 = score_text.global_position
+
+func handle_score_animation(addscore: int):
+	var oldscore: int = score
+	score = addscore
+	var tween: Tween = create_tween()
+	var addlabel: Label = Label.new()
+	addlabel.set("theme_override_fonts/font", score_text.get("theme_override_fonts/font"))
+	addlabel.set("theme_override_colors/font_color", Color.ORANGE_RED)
+	addlabel.horizontal_alignment = score_text.horizontal_alignment
+	addlabel.global_position = base_position + Vector2(8, -32)
+	addlabel.text = str(addscore-oldscore)
+	addlabel.size = score_text.size
+	addlabel.modulate.a = 0
+	add_child(addlabel)
+	tween.set_parallel(true)
+	tween.tween_property(addlabel, "modulate:a", 1, 0.15).set_trans(Tween.TRANS_EXPO)
+	tween.tween_property(addlabel, "position:x", base_position.x, 0.25).set_trans(Tween.TRANS_EXPO)
+	tween.set_parallel(false)
+	tween.tween_interval(0.25)
+	tween.set_parallel(true)
+	tween.tween_property(addlabel, "position:y", base_position.y, 0.2).set_trans(Tween.TRANS_EXPO)
+	tween.tween_property(addlabel, "modulate:a", 0, 0.2).set_trans(Tween.TRANS_EXPO)
+	#tween.tween_interval(-0.15)
+	tween.tween_interval(0.1)
+	tween.tween_callback(func():
+		visual_score = addscore
+		score_text.text = str(visual_score)
+		score_text.scale.y = 1.25
+	)
+	tween.tween_property(score_text, "scale:y", 1, 0.2).from(1.3)
+	tween.set_parallel(false)
+	tween.tween_interval(0.15)
+	tween.tween_callback(addlabel.queue_free)
 
 func hit_note(type: int, time: float):
-	if drumrolls[type]: return JudgeType.INVALID
+	if drumrolls[type]: return JudgeType.ROLL
 	# Not a roll note
 	var judgetype: int = JudgeType.BAD
 	if time - JUDGEMENT_GREAT <= elapsed and elapsed <= (time + JUDGEMENT_GREAT):
@@ -145,6 +206,10 @@ func hit_note(type: int, time: float):
 		if judgetype != JudgeType.BAD:
 			combo += 1
 			taiko.change_combo(combo)
+			var j = 2-judgetype
+			if (type == 3 or type == 4 or type == 10) and judgetype != JudgeType.BAD:
+				j += 1
+			handle_score_animation(ScoreManager.calc_score(score, combo, j, gogo_time_active)[0])
 		else:
 			combo = 0
 			taiko.drop_combo()
@@ -167,13 +232,16 @@ func hit_note(type: int, time: float):
 		judge_tween.tween_property(judge_score, "modulate:a", 0, 0.1)
 	return judgetype
 
-func remove_note_and_add_to_arc(note: Dictionary, result: int):
+func remove_note_and_add_to_arc(note: Dictionary, result: int, roll: bool = false, roll_type: int = 1):
 	var dr = cur_chart.note_draw_data.find(note)
 	var type: int = note["note"]
 	if dr != -1: 
 		if $Notes.note_sprites[type] != null and soul_curve.get_child_count() < 32 and result != JudgeType.BAD:
 			var spr: Sprite2D = Sprite2D.new()
 			spr.texture = $Notes.note_sprites[type]
+			if roll:
+				spr.texture = $Notes.note_sprites[roll_type]
+				print("such")
 			if type == 3 or type == 4:
 				var dai_effect: AnimatedSprite2D = AnimatedSprite2D.new()
 				dai_effect.sprite_frames = dai_frames
@@ -192,13 +260,15 @@ func remove_note_and_add_to_arc(note: Dictionary, result: int):
 			ptween.tween_interval(0.3)
 			ptween.tween_callback(pathfind.queue_free)
 			soul_curve.add_child(pathfind)
-			var note_boom: NoteSoulEffect = NoteSoulEffect.new()
-			note_boom.note_type = type
-			note_boom.global_position = notes.judgement_position
-			note_boom.z_index = -1
-			note_boom.judge = result
-			add_child(note_boom)
-		cur_chart.note_draw_data.remove_at(dr)
+			if not roll:
+				var note_boom: NoteSoulEffect = NoteSoulEffect.new()
+				note_boom.note_type = type
+				note_boom.global_position = notes.judgement_position
+				note_boom.z_index = -1
+				note_boom.judge = result
+				add_child(note_boom)
+		if not roll:
+			cur_chart.note_draw_data.remove_at(dr)
 	
 func auto_play():
 	if not autoplay: return
@@ -215,8 +285,6 @@ func auto_play():
 		if type >= 999: continue
 		# Should we register a hit?
 		if time >= elapsed: continue
-		var result = hit_note(type, time)
-		if result == JudgeType.INVALID: continue
 		match type:
 			1:
 				taiko.taiko_input(0, auto_don_side, true)
@@ -231,8 +299,10 @@ func auto_play():
 				taiko.taiko_input(1, 0, true)
 				taiko.taiko_input(1, 1, true)
 			5, 6:
+				last_roll_note = cur_chart.note_draw_data[cur_chart.note_draw_data.find(note)]
 				rolling = true
 				roll_timer = 0
+				roll_mmm = 0
 			8: 
 				rolling = false
 			ChartData.NoteType.SWAP:
@@ -240,8 +310,12 @@ func auto_play():
 				taiko.taiko_input(1, auto_kat_side, true)
 				auto_don_side = wrapi(auto_don_side+1, 0, 2)
 				auto_kat_side = wrapi(auto_kat_side+1, 0, 2)
+		var result = hit_note(type, time)
+		if result == JudgeType.INVALID: continue
+		#if type == 5 or type == 6 or type == 7 or type == 8: continue
 		# These two are fundamentally the same
 		current_note_list.remove_at(i)
+		if result == JudgeType.ROLL: continue
 		remove_note_and_add_to_arc(note, result)
 
 func handle_input():
@@ -260,6 +334,21 @@ func handle_input():
 			taiko.taiko_input(1, 1, hit)
 	if (Input.is_action_just_pressed("don_left") or Input.is_action_just_pressed("don_right")) and \
 	(Input.is_action_just_pressed("ka_left") or Input.is_action_just_pressed("ka_right")):
+		if rolling and not last_roll_note.is_empty():
+			if last_roll_note["note"] == 5:
+				var dummy_type: int = 1
+				if (Input.is_action_just_pressed("ka_left") or Input.is_action_just_pressed("ka_right")):
+					dummy_type = 2
+				remove_note_and_add_to_arc(last_roll_note, JudgeType.GREAT, false, dummy_type)
+				handle_score_animation(ScoreManager.calc_roll(score, 2, gogo_time_active))
+			elif last_roll_note["note"] == 6:
+				var dummy_type: int = 3
+				if (Input.is_action_just_pressed("ka_left") or Input.is_action_just_pressed("ka_right")):
+					dummy_type = 4
+				remove_note_and_add_to_arc(last_roll_note, JudgeType.GREAT, false, dummy_type)
+				handle_score_animation(ScoreManager.calc_roll(score, 3, gogo_time_active))
+			if last_roll_note["roll_color_mod"] != Color.RED:
+				last_roll_note["roll_color_mod"] *= Color.RED*0.25
 		var hit = check_note(10)
 		if Input.is_action_just_pressed("don_left"):
 			taiko.taiko_input(0, 0, hit)
@@ -269,8 +358,9 @@ func handle_input():
 			taiko.taiko_input(1, 0, hit)
 		if Input.is_action_just_pressed("ka_right"):
 			taiko.taiko_input(1, 1, hit)
+	var fucked: PackedInt64Array
 	# Check for unpressed lmao
-	for i in range(min(current_note_list.size()-1, 512), -1, -1):
+	for i in range(0, min(current_note_list.size()-1, 512)):
 		var note: Dictionary = current_note_list[i]
 		# Look, we can't detect if we should hit if we don't have one.
 		if not note.has("time"): continue
@@ -279,17 +369,29 @@ func handle_input():
 		var time: float = note["time"]
 		# Do not include special notes from now on.
 		if type >= 999: continue
+		if (type == 5 or type == 6) and time < elapsed:
+			rolling = true
+			roll_mmm = 0
+			last_roll_note = cur_chart.note_draw_data[cur_chart.note_draw_data.find(note)]
+		if type == 8 and time < elapsed:
+			rolling = false
+			last_roll_note = {}
 		if time > elapsed - JUDGEMENT_BAD: continue
 		var result = hit_note(type, time)
 		if result == JudgeType.INVALID: continue
 		# These two are fundamentally the same
-		current_note_list.remove_at(i)
+		fucked.append(i)
+		if result == JudgeType.ROLL: continue
 		remove_note_and_add_to_arc(note, result)
+	# Remove offending notes
+	if fucked.size() > 0:
+		for fuck in fucked:
+			current_note_list.remove_at(fuck)
 
 func check_note(check_type: int):
 	var hit: bool = false
-	# In reverse to handle removing these within the loop
-	for i in range(min(current_note_list.size()-1, 512), -1, -1):
+	var fucked: PackedInt64Array
+	for i in range(0, min(current_note_list.size()-1, 512)):
 		var note: Dictionary = current_note_list[i]
 		# Look, we can't detect if we should hit if we don't have one.
 		if not note.has("time"): continue
@@ -312,11 +414,18 @@ func check_note(check_type: int):
 		type = old_type
 		if result == JudgeType.INVALID: continue
 		# These two are fundamentally the same
-		current_note_list.remove_at(i)
+		fucked.append(i)
+		if result == JudgeType.ROLL: continue
 		remove_note_and_add_to_arc(note, result)
 		hit = true
 		break
+	# Remove offending notes
+	if fucked.size() > 0:
+		for fuck in fucked:
+			current_note_list.remove_at(fuck)
 	return hit
+
+var gogo_time_active: bool = false
 
 func handle_play_events():
 	for i in range(cur_chart.command_log.size()-1, -1, -1):
@@ -387,12 +496,14 @@ func handle_play_events():
 					tween.set_parallel(true)
 					tween.tween_property($GogoEffect, "modulate:a", 0.5, 0.1)
 					tween.tween_property($Taiko/SFieldEffects/SfieldGogo, "scale:y", 1.0, 0.1)
+					gogo_time_active = true
 				ChartData.NoteType.GOGOEND:
 					don_chan.state = 0
 					var tween = create_tween()
 					tween.set_parallel(true)
 					tween.tween_property($GogoEffect, "modulate:a", 0.0, 0.1)
 					tween.tween_property($Taiko/SFieldEffects/SfieldGogo, "scale:y", 0.0, 0.1)
+					gogo_time_active = false
 			cur_chart.specil.remove_at(i)
 
 var last_current_beat: float = 0.0

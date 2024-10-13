@@ -45,6 +45,7 @@ var level: int
 # Default values according to TJAPlayer3
 var scoreinit: PackedInt32Array = [300, 1000] 
 var scorediff: int = 120
+var scoremode: int = ScoreManager.ScoreType.AC14
 var style: int = 0 # TODO
 var balloons: PackedFloat64Array
 var bemani_scroll: bool = false

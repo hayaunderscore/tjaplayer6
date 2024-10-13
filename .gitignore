@@ -4,3 +4,4 @@
 *.exe
 export_presets.cfg
 charts/
+*.dll

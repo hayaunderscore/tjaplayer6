@@ -152,6 +152,7 @@ func parse_tja(path: String):
 	# Default values according to TJAPlayer3
 	var scoreinit: Array[int] = [300, 1000] 
 	var scorediff: int = 120
+	var scoremode: int = ScoreManager.ScoreType.AC14
 	var style: int = 0 # TODO
 	var balloons: PackedFloat64Array
 	
@@ -164,6 +165,7 @@ func parse_tja(path: String):
 	var current_delay: float = 0
 	var locked_delay: bool = true
 	var last_dummy_delay: float = 0.0
+	var gogo_time: bool = false
 	
 	var comment_regex: RegEx = RegEx.new()
 	comment_regex.compile("(\\/\\/)(.+?)(?=[\\n\\r]|\\*\\))")
@@ -229,6 +231,9 @@ func parse_tja(path: String):
 				cur_chart.course = course
 				cur_chart.level = level
 				cur_chart.balloons = balloons
+				cur_chart.scoremode = scoremode
+				cur_chart.scoreinit = scoreinit
+				cur_chart.scorediff = scorediff
 				if tjaf.alttitle.is_empty():
 					tjaf.alttitle = tjaf.title
 				# Shhh
@@ -275,7 +280,27 @@ func parse_tja(path: String):
 								course = 4
 				if line.begins_with("LEVEL:"):
 					level = int(_find_value(line, "LEVEL:", str(level)))
-				# No score diff and init for now... deal with that laterer
+				if line.begins_with("SCOREMODE:"):
+					scoremode = int(_find_value(line, "SCOREMODE:", str(scoremode)))
+					print(scoremode)
+				if line.begins_with("SCOREINIT:"):
+					var val = _find_value(line, "SCOREINIT:").split_floats(",", false)
+					if val.size() > 0:
+						scoreinit[0] = int(val[0])
+					else:
+						scoreinit[0] = 300
+					if val.size() > 1:
+						scoreinit[1] = int(val[1])
+					else:
+						scoreinit[1] = 1000
+					print(scoreinit)
+				if line.begins_with("SCOREDIFF:"):
+					var val = _find_value(line, "SCOREDIFF:", str(scorediff))
+					if not val.is_empty():
+						scorediff = int(val)
+					else:
+						scorediff = 120
+					print(scorediff)
 				if line.begins_with("BALLOON:"):
 					balloons = _find_value(line, "BALLOON:").split_floats(",")
 			continue
@@ -357,8 +382,10 @@ func parse_tja(path: String):
 		for l in measures:
 			match l:
 				"#GOGOSTART":
+					gogo_time = true
 					cur_chart.specil.append({"time": time, "scroll": Vector2(cur_scroll, cur_scrolly), "note": ChartData.NoteType.GOGOSTART, "load_ms": Vector2.ZERO, "ppf": Vector2.ZERO, "negative_delay": 0})
 				"#GOGOEND":
+					gogo_time = false
 					cur_chart.specil.append({"time": time, "scroll": Vector2(cur_scroll, cur_scrolly), "note": ChartData.NoteType.GOGOEND, "load_ms": Vector2.ZERO, "ppf": Vector2.ZERO, "negative_delay": 0})
 				_:
 					# Somehow
@@ -473,7 +500,8 @@ func parse_tja(path: String):
 								"balloon_value": 0,
 								"negative_delay": current_negative_delay,
 								"dummy": true,
-								"dummy_offset": last_dummy_delay
+								"dummy_offset": last_dummy_delay,
+								"gogotime": false,
 							}
 							get_se_note(cur_chart.notes, 60 * cur_meter / cur_bpm, no, note_time-tjaf.offset)
 							cur_chart.notes.append(no)
@@ -513,7 +541,8 @@ func parse_tja(path: String):
 								"roll_time": 0.0,
 								"roll_loadms": Vector2(-INF, -INF),
 								"balloon_value": 0,
-								"negative_delay": current_negative_delay
+								"negative_delay": current_negative_delay,
+								"gogotime": gogo_time
 							}
 							var last_note: Dictionary = {}
 							if n == 8: # Handle
@@ -523,10 +552,13 @@ func parse_tja(path: String):
 									time - (screen_distance / ppf_vec.x / 60),
 									time - (screen_distance / ppf_vec.y / 60)
 								))
+								cur_chart.notes[rnoteidx]["roll_color_mod"] = Color.WHITE
 								last_note = cur_chart.notes[rnoteidx]
+								
 							cur_note = no
 							if n == 8:
 								cur_note["roll_note"] = last_note
+								cur_note["roll_color_mod"] = Color.WHITE
 							cur_chart.notes.append(cur_note)
 							get_se_note(cur_chart.notes, 60 * cur_meter / cur_bpm, no, time)
 						time += 60 * (cur_meter / notes_in_measure) / cur_bpm

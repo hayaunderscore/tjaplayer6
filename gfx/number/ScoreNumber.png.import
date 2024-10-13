@@ -1,0 +1,25 @@
+[remap]
+
+importer="font_data_image"
+type="FontFile"
+uid="uid://bwqv741mu3w6g"
+path="res://.godot/imported/ScoreNumber.png-13a6acc83670ec2ac5eb9fbe4cc2d944.fontdata"
+
+[deps]
+
+source_file="res://gfx/number/ScoreNumber.png"
+dest_files=["res://.godot/imported/ScoreNumber.png-13a6acc83670ec2ac5eb9fbe4cc2d944.fontdata"]
+
+[params]
+
+character_ranges=PackedStringArray("48-57", "")
+kerning_pairs=PackedStringArray()
+columns=10
+rows=1
+image_margin=Rect2i(0, 0, 0, 0)
+character_margin=Rect2i(0, 0, 0, 0)
+ascent=0
+descent=0
+fallbacks=[]
+compress=true
+scaling_mode=0

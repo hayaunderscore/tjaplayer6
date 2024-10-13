@@ -1,0 +1,7 @@
+[gd_resource type="FontVariation" load_steps=2 format=3 uid="uid://bt3je228fbhus"]
+
+[ext_resource type="FontFile" uid="uid://bwqv741mu3w6g" path="res://gfx/number/ScoreNumber.png" id="1_aedpl"]
+
+[resource]
+base_font = ExtResource("1_aedpl")
+spacing_glyph = -12

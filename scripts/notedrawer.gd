@@ -167,6 +167,7 @@ func _draw() -> void:
 					var last_type: int = last_note["note"]
 					if last_type == ChartData.NoteType.BALLOON:
 						continue
+					col = last_note["roll_color_mod"]
 					# I think it's probably best we precalculate these
 					# Doing this is not accurate to how TaikoJiro's rolls work
 					# See: Oshama Scramble complex number chart
@@ -186,7 +187,7 @@ func _draw() -> void:
 					if last_pos.angle_to_point(pos) > PI/2:
 						se_pos = 70
 					rect = Rect2(-Vector2(-20, se_pos), Vector2(dist-40, roll_se.get_height())).abs()
-					draw_texture_rect(roll_se, rect, true, col)
+					draw_texture_rect(roll_se, rect, true, Color.WHITE)
 					# Reset when done >:(
 					draw_set_transform(Vector2.ZERO)
 				_:
