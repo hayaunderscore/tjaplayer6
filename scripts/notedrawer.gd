@@ -167,7 +167,7 @@ func _draw() -> void:
 					var last_type: int = last_note["note"]
 					if last_type == ChartData.NoteType.BALLOON:
 						continue
-					col = last_note["roll_color_mod"]
+					col = note["roll_color_mod"]
 					# I think it's probably best we precalculate these
 					# Doing this is not accurate to how TaikoJiro's rolls work
 					# See: Oshama Scramble complex number chart

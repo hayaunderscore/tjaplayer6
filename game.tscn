@@ -1,4 +1,4 @@
-[gd_scene load_steps=37 format=3 uid="uid://cqrjctcrfhnv"]
+[gd_scene load_steps=38 format=3 uid="uid://cqrjctcrfhnv"]
 
 [ext_resource type="Script" path="res://game.gd" id="1_kakou"]
 [ext_resource type="AudioStream" uid="uid://2mhf4s1a821v" path="res://snd/dong.wav" id="2_3pvjb"]
@@ -33,6 +33,7 @@
 [ext_resource type="Texture2D" uid="uid://c1evttt3c3yy" path="res://gfx/judgement.png" id="31_de7vm"]
 [ext_resource type="AudioStream" uid="uid://c4f1pkkmu48ew" path="res://snd/difficulty_select.ogg" id="32_xjkad"]
 [ext_resource type="FontVariation" uid="uid://bt3je228fbhus" path="res://gfx/number/score.tres" id="33_b2gsf"]
+[ext_resource type="Script" path="res://scripts/score_drawer.gd" id="34_reb8p"]
 
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_2cfb4"]
 blend_mode = 2
@@ -379,6 +380,7 @@ text = "Ura Oni / Edit
 stream = ExtResource("32_xjkad")
 
 [node name="Score" type="Label" parent="."]
+visible = false
 offset_left = 184.0
 offset_top = 80.0
 offset_right = 624.0
@@ -387,6 +389,12 @@ pivot_offset = Vector2(0, 32)
 theme_override_fonts/font = ExtResource("33_b2gsf")
 text = "0"
 horizontal_alignment = 2
+
+[node name="AddScores" type="Node2D" parent="."]
+
+[node name="ScoreDrawer" type="Node2D" parent="."]
+position = Vector2(592, 94)
+script = ExtResource("34_reb8p")
 
 [connection signal="timeout" from="Timer" to="." method="preamble_timeout"]
 [connection signal="pressed" from="Diffilcut/MarginContainer/VBoxContainer/Easy" to="." method="_on_easy_pressed"]

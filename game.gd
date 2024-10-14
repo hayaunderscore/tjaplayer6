@@ -47,6 +47,7 @@ func on_drop(path: PackedStringArray):
 	audio.stream = cur_tja.wave
 	voice.play()
 	score = 0
+	$ScoreDrawer.score = 0
 	score_text.text = "0"
 	$Intro.visible = false
 	$Diffilcut.visible = true
@@ -101,10 +102,10 @@ func auto_roll():
 		taiko.taiko_input(0, auto_don_side, true)
 		auto_don_side = wrapi(auto_don_side+1, 0, 2)
 		if not last_roll_note.is_empty():
-			if last_roll_note["note"] == 5:
+			if last_roll_note["roll_note_type"] == 5:
 				remove_note_and_add_to_arc(last_roll_note, JudgeType.GREAT, true, 1)
 				handle_score_animation(ScoreManager.calc_roll(score, 2, gogo_time_active))
-			elif last_roll_note["note"] == 6:
+			elif last_roll_note["roll_note_type"] == 6:
 				remove_note_and_add_to_arc(last_roll_note, JudgeType.GREAT,true, 3)
 				handle_score_animation(ScoreManager.calc_roll(score, 3, gogo_time_active))
 			if last_roll_note["roll_color_mod"] != Color.RED:
@@ -173,7 +174,7 @@ func handle_score_animation(addscore: int):
 	addlabel.text = str(addscore-oldscore)
 	addlabel.size = score_text.size
 	addlabel.modulate.a = 0
-	add_child(addlabel)
+	$AddScores.add_child(addlabel)
 	tween.set_parallel(true)
 	tween.tween_property(addlabel, "modulate:a", 1, 0.15).set_trans(Tween.TRANS_EXPO)
 	tween.tween_property(addlabel, "position:x", base_position.x, 0.25).set_trans(Tween.TRANS_EXPO)
@@ -188,8 +189,9 @@ func handle_score_animation(addscore: int):
 		visual_score = addscore
 		score_text.text = str(visual_score)
 		score_text.scale.y = 1.25
+		$ScoreDrawer.score = visual_score
 	)
-	tween.tween_property(score_text, "scale:y", 1, 0.2).from(1.3)
+	tween.tween_property(score_text, "scale:y", 1, 0.2).from(1.4)
 	tween.set_parallel(false)
 	tween.tween_interval(0.15)
 	tween.tween_callback(addlabel.queue_free)
@@ -241,7 +243,6 @@ func remove_note_and_add_to_arc(note: Dictionary, result: int, roll: bool = fals
 			spr.texture = $Notes.note_sprites[type]
 			if roll:
 				spr.texture = $Notes.note_sprites[roll_type]
-				print("such")
 			if type == 3 or type == 4:
 				var dai_effect: AnimatedSprite2D = AnimatedSprite2D.new()
 				dai_effect.sprite_frames = dai_frames
@@ -299,7 +300,7 @@ func auto_play():
 				taiko.taiko_input(1, 0, true)
 				taiko.taiko_input(1, 1, true)
 			5, 6:
-				last_roll_note = cur_chart.note_draw_data[cur_chart.note_draw_data.find(note)]
+				last_roll_note = cur_chart.note_draw_data[cur_chart.note_draw_data.find(note)+1]
 				rolling = true
 				roll_timer = 0
 				roll_mmm = 0
@@ -360,7 +361,7 @@ func handle_input():
 			taiko.taiko_input(1, 1, hit)
 	var fucked: PackedInt64Array
 	# Check for unpressed lmao
-	for i in range(0, min(current_note_list.size()-1, 512)):
+	for i in range(0, min(current_note_list.size(), 512)):
 		var note: Dictionary = current_note_list[i]
 		# Look, we can't detect if we should hit if we don't have one.
 		if not note.has("time"): continue
@@ -372,7 +373,7 @@ func handle_input():
 		if (type == 5 or type == 6) and time < elapsed:
 			rolling = true
 			roll_mmm = 0
-			last_roll_note = cur_chart.note_draw_data[cur_chart.note_draw_data.find(note)]
+			last_roll_note = cur_chart.note_draw_data[cur_chart.note_draw_data.find(note)+1]
 		if type == 8 and time < elapsed:
 			rolling = false
 			last_roll_note = {}
@@ -391,7 +392,7 @@ func handle_input():
 func check_note(check_type: int):
 	var hit: bool = false
 	var fucked: PackedInt64Array
-	for i in range(0, min(current_note_list.size()-1, 512)):
+	for i in range(0, min(current_note_list.size(), 512)):
 		var note: Dictionary = current_note_list[i]
 		# Look, we can't detect if we should hit if we don't have one.
 		if not note.has("time"): continue

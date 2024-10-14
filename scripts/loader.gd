@@ -558,6 +558,7 @@ func parse_tja(path: String):
 							cur_note = no
 							if n == 8:
 								cur_note["roll_note"] = last_note
+								cur_note["roll_note_type"] = last_note["note"]
 								cur_note["roll_color_mod"] = Color.WHITE
 							cur_chart.notes.append(cur_note)
 							get_se_note(cur_chart.notes, 60 * cur_meter / cur_bpm, no, time)
