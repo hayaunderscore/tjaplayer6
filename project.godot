@@ -25,6 +25,7 @@ ScoreManager="*res://scripts/score.gd"
 window/size/viewport_width=640
 window/size/viewport_height=480
 window/stretch/mode="viewport"
+window/vsync/vsync_mode=0
 
 [input]
 

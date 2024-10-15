@@ -154,6 +154,7 @@ func _draw() -> void:
 		var note_scale: Vector2 = Vector2(1, 1)
 		var pos = get_note_position(note["time"], note["bpm"], note["scroll"], note["beat_position"], note.has("dummy"), note.get("dummy_offset", 0))
 		if pos.x > 640+80 and note["note"] != 8: continue
+		if pos.x < -80: continue
 		if (note["note"] < note_sprites.size() and note_sprites[note["note"]] != null) or note["note"] == 999:
 			var atlas_yoffset: float = 0.0
 			if combo_anim:
@@ -171,7 +172,8 @@ func _draw() -> void:
 					# I think it's probably best we precalculate these
 					# Doing this is not accurate to how TaikoJiro's rolls work
 					# See: Oshama Scramble complex number chart
-					var last_pos: Vector2 = get_note_position(last_note["time"], last_note["bpm"], last_note["scroll"], last_note["beat_position"], false, note.get("dummy_offset", 0))
+					var last_pos: Vector2 = get_note_position(last_note["time"], last_note["bpm"], last_note["scroll"], last_note["beat_position"], false, note.get("dummy_offset",0))
+					if last_pos.x > 640+80: continue
 					draw_set_transform(last_pos, last_pos.angle_to_point(pos))
 					var dist: float = last_pos.distance_to(pos)
 					var roll_body: Vector2 = roll_region_positions[last_note["note"]][0]
