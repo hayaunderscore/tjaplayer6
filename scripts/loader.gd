@@ -123,6 +123,36 @@ func get_se_note(note_list: Array[Dictionary], measure_ms: float, note: Dictiona
 	else:
 		note["senote"] = se_notes[note["note"]]
 
+func merge_sort(cards: Array[Dictionary]) -> Array[Dictionary]:
+	if cards.size() <= 1:
+		return cards
+	var mid = cards.size() / 2
+	var left = merge_sort(cards.slice(0, mid))
+	var right = merge_sort(cards.slice(mid, cards.size()))
+	return merge(left, right)
+
+func merge(left: Array[Dictionary], right: Array[Dictionary]) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	var i = 0
+	var j = 0
+	while i < left.size() and j < right.size():
+		if left[i]["time"] < right[j]["time"]:
+			result.append(left[i])
+			i += 1
+		else:
+			result.append(right[j])
+			j += 1
+
+	while i < left.size():
+		result.append(left[i])
+		i += 1
+
+	while j < right.size():
+		result.append(right[j])
+		j += 1
+
+	return result
+
 func parse_tja(path: String):
 	print("Parsing tja on %s....." % path)
 	if not FileAccess.file_exists(path):
@@ -320,6 +350,9 @@ func parse_tja(path: String):
 			sorted = sorted.filter(func(a): return a["note"] < 999)
 			# sorted.sort_custom(func(a, b): a["time"] < b["time"])
 			cur_chart.note_draw_data = sorted.duplicate(true)
+			print(cur_chart.notes.size())
+			var m: Array[Dictionary] = merge_sort(cur_chart.notes)
+			cur_chart.notes = m
 			cur_chart.bemani_scroll = bemani_scroll
 			cur_chart.disable_scroll = disable_scroll
 			bemani_scroll = false
@@ -528,7 +561,7 @@ func parse_tja(path: String):
 							)
 							var no: Dictionary = {
 								"note": n,
-								"time": time,
+								"time": floor(time * 1000) / 1000,
 								"bpm": cur_bpm,
 								"meter": cur_meter,
 								"scroll": Vector2(cur_scroll, cur_scrolly),

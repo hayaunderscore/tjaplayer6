@@ -293,9 +293,10 @@ func remove_note_and_add_to_arc(note: Dictionary, result: int, roll: bool = fals
 func auto_play():
 	if not autoplay: return
 	auto_roll()
-	# In reverse to handle removing these within the loop
-	for i in range(min(current_note_list.size()-1, 512), -1, -1):
-		var note: Dictionary = current_note_list[i]
+	# It really is that shrimple
+	if current_note_list.size() <= 0: return
+	while current_note_list[0]["time"] < elapsed:
+		var note: Dictionary = current_note_list.pop_front()
 		# Look, we can't detect if we should hit if we don't have one.
 		if not note.has("time"): continue
 		if note.has("dummy"): continue
@@ -334,9 +335,11 @@ func auto_play():
 		if result == JudgeType.INVALID: continue
 		#if type == 5 or type == 6 or type == 7 or type == 8: continue
 		# These two are fundamentally the same
-		current_note_list.remove_at(i)
 		if result == JudgeType.ROLL: continue
 		remove_note_and_add_to_arc(note, result)
+		# This manual break is fucking needed.
+		if current_note_list.size() <= 0:
+			break
 
 func handle_input():
 	if autoplay: return
