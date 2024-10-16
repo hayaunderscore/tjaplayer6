@@ -1,0 +1,71 @@
+[gd_scene load_steps=7 format=3 uid="uid://0kcvgx7wasbo"]
+
+[ext_resource type="Texture2D" uid="uid://b6s2woyk56rfl" path="res://gfx/songselect/bg/bg.png" id="1_iw8xn"]
+[ext_resource type="FontFile" uid="uid://cvss1dbjddhcc" path="res://gfx/font/OtomanopeeOne-Regular.ttf" id="2_qncq1"]
+[ext_resource type="Texture2D" uid="uid://du5lxet1yfo4j" path="res://gfx/songselect/bg/message_songselect.png" id="2_xgti4"]
+[ext_resource type="Texture2D" uid="uid://dhalvcxouxnl5" path="res://gfx/songselect/song_bar.png" id="3_8bbu2"]
+
+[sub_resource type="FontVariation" id="FontVariation_hijq6"]
+base_font = ExtResource("2_qncq1")
+spacing_glyph = 4
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_gx4hl"]
+content_margin_left = 16.0
+content_margin_top = 16.0
+content_margin_right = 16.0
+content_margin_bottom = 16.0
+texture = ExtResource("3_8bbu2")
+texture_margin_left = 32.0
+texture_margin_top = 32.0
+texture_margin_right = 32.0
+texture_margin_bottom = 32.0
+
+[node name="SongSelect" type="Node2D"]
+
+[node name="Background" type="Parallax2D" parent="."]
+repeat_size = Vector2(568, 0)
+autoscroll = Vector2(-32, 0)
+repeat_times = 2
+
+[node name="Sprite2D" type="Sprite2D" parent="Background"]
+texture = ExtResource("1_iw8xn")
+centered = false
+offset = Vector2(284, 0)
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 640.0
+offset_bottom = 480.0
+mouse_filter = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="Control"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 32
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 32
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/MarginContainer"]
+layout_mode = 2
+
+[node name="Button" type="Button" parent="Control/MarginContainer/VBoxContainer"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_constants/outline_size = 12
+theme_override_fonts/font = SubResource("FontVariation_hijq6")
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxTexture_gx4hl")
+text = " "
+clip_text = true
+
+[node name="Fore" type="Sprite2D" parent="."]
+z_index = 2048
+texture = ExtResource("2_xgti4")
+centered = false

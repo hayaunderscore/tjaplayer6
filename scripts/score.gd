@@ -25,13 +25,13 @@ var score_calc: Dictionary = {
 		func(score, combo, init, diff, judge, gogo): 
 			return floorf((score + ((init + diff * (8 if combo >= 100 else 4 if combo >= 50 else 2 if combo >= 30 else 1 if combo >= 10 else 0)) * RATING_MULTIPLIER[judge] * (GOGO_MULTIPLIER if gogo else 1))) / 10) * 10,
 		func(score, combo, init, diff, judge, gogo):
-			return floorf((score + init + diff * RATING_MULTIPLIER[judge] * (GOGO_MULTIPLIER if gogo else 1)) / 10) * 10,
+			return floorf((score + init * RATING_MULTIPLIER[mini(judge, 2)] * (GOGO_MULTIPLIER if gogo else 1)) / 10) * 10,
 	],
 	Drumroll = [
 		func(score, notetype, gogo): return score + ((300 if notetype == 3 else 600) * (GOGO_MULTIPLIER if gogo else 1)),
 		func(score, notetype, gogo): return score + ((300 if notetype == 3 else 600) * (GOGO_MULTIPLIER if gogo else 1)),
-		func(score, notetype, gogo): return score + ((100 if notetype == 3 else 200) * (GOGO_MULTIPLIER if gogo else 1)),
-		func(score, notetype, gogo): return score + ((100 if notetype == 3 else 200) * (GOGO_MULTIPLIER if gogo else 1))
+		func(score, notetype, gogo): return score + ((200 if notetype == 3 else 100) * (GOGO_MULTIPLIER if gogo else 1)),
+		func(score, notetype, gogo): return score + (200 * (GOGO_MULTIPLIER if gogo else 1))
 	],
 	Balloon = [
 		func(score, notetype, gogo): return score + (300 * (GOGO_MULTIPLIER if gogo else 1)),

@@ -17,7 +17,7 @@ func _draw() -> void:
 	if not processed: return
 	for i in range(0, _score_string.length(), 1):
 		# print(i)
-		draw_set_transform(Vector2((i*20)-_score_string.length()*20+20, 0-(_score_scales[i]*16)), 0, Vector2(1, 1+_score_scales[i]))
+		draw_set_transform(Vector2((i*20)-_score_string.length()*20, 0-(_score_scales[i]*16)-16), 0, Vector2(1, 1+_score_scales[i]))
 		draw_string(font, Vector2.ZERO, _score_string[i])
 
 # Score scale change logic
@@ -39,7 +39,7 @@ func _process(delta: float) -> void:
 			_score_scales[j] = 0.15
 			_score_tweens[j].tween_method(func(val):
 				_score_scales[j] = val
-			, 0.15, 0, 0.25).set_trans(Tween.TRANS_EXPO)
+			, 0.15, 0, 0.15)
 	var change_last_zero: bool = false
 	for i in range(0, _score_string.length(), 1):
 		if (i < last_string.length() and last_string.unicode_at(i) != _score_string.unicode_at(i)) \
@@ -48,6 +48,6 @@ func _process(delta: float) -> void:
 			_score_scales[i] = 0.15
 			_score_tweens[i].tween_method(func(val):
 				_score_scales[i] = val
-			, 0.15, 0, 0.25).set_trans(Tween.TRANS_EXPO)
+			, 0.15, 0, 0.15)
 			change_last_zero = true
 	queue_redraw()

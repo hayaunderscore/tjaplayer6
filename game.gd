@@ -13,6 +13,8 @@ var cur_chart: ChartData
 @onready var taiko: TaikoDrum = $Taiko
 @onready var voice: AudioStreamPlayer = $Voice
 
+@onready var rhythm_notifier: RhythmNotifier = $RhythmNotifier
+
 var current_bpm: float = 0.0
 var current_meter: float = 4.0
 var current_scroll: Vector2 = Vector2.ZERO
@@ -67,6 +69,8 @@ func find_chart_and_play(diff: int):
 	print(ScoreManager.calc_max_score_and_combo(cur_chart.notes))
 	# autoplay = false
 	current_bpm = cur_tja.start_bpm
+	$RhythmNotifier.bpm = current_bpm
+	$RhythmNotifier.running = true
 	current_note_list.clear()
 	current_note_list = cur_chart.notes
 	elapsed = 0
@@ -131,12 +135,12 @@ func spawn_gauge_effect():
 	spr.texture = soul_effect
 	spr.modulate = Color(Color.YELLOW, 0.8)
 	spr.global_position = Vector2(600, 43)
-	spr.scale = Vector2.ZERO
+	spr.scale = Vector2.ONE * 0.25
 	spr.z_index = -1
 	var tween: Tween = spr.create_tween()
 	tween.set_parallel(true)
 	tween.tween_property(spr, "scale", Vector2.ONE, 0.3)
-	tween.tween_property(spr, "modulate", Color(Color.ORANGE_RED, 0.8), 0.3)
+	tween.tween_property(spr, "modulate", Color(Color.html("#FF4A29"), 0.8), 0.25).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_IN)
 	tween.tween_property(spr, "rotation_degrees", 60, 0.3)
 	tween.tween_interval(0.3)
 	tween.set_parallel(false)
@@ -173,21 +177,21 @@ func handle_score_animation(addscore: int):
 	addlabel.set("theme_override_fonts/font", score_text.get("theme_override_fonts/font"))
 	addlabel.set("theme_override_colors/font_color", Color.ORANGE_RED)
 	addlabel.horizontal_alignment = score_text.horizontal_alignment
-	addlabel.global_position = base_position + Vector2(8, -32)
+	addlabel.global_position = base_position + Vector2(-8, -32)
 	addlabel.text = str(addscore-oldscore)
 	addlabel.size = score_text.size
 	addlabel.modulate.a = 0
 	$AddScores.add_child(addlabel)
 	tween.set_parallel(true)
-	tween.tween_property(addlabel, "modulate:a", 1, 0.15).set_trans(Tween.TRANS_EXPO)
+	tween.tween_property(addlabel, "modulate:a", 1, 0.2).set_trans(Tween.TRANS_EXPO)
 	tween.tween_property(addlabel, "position:x", base_position.x, 0.25).set_trans(Tween.TRANS_EXPO)
 	tween.set_parallel(false)
-	tween.tween_interval(0.25)
+	tween.tween_interval(0.15)
 	tween.set_parallel(true)
-	tween.tween_property(addlabel, "position:y", base_position.y, 0.2).set_trans(Tween.TRANS_EXPO)
-	tween.tween_property(addlabel, "modulate:a", 0, 0.2).set_trans(Tween.TRANS_EXPO)
+	tween.tween_property(addlabel, "position:y", base_position.y, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+	tween.tween_property(addlabel, "modulate:a", 0, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
 	#tween.tween_interval(-0.15)
-	tween.tween_interval(0.1)
+	tween.set_parallel(false)
 	tween.tween_callback(func():
 		visual_score = addscore
 		score_text.text = str(visual_score)
@@ -195,7 +199,6 @@ func handle_score_animation(addscore: int):
 		$ScoreDrawer.score = visual_score
 	)
 	tween.tween_property(score_text, "scale:y", 1, 0.2).from(1.4)
-	tween.set_parallel(false)
 	tween.tween_interval(0.15)
 	tween.tween_callback(addlabel.queue_free)
 
@@ -237,6 +240,8 @@ func hit_note(type: int, time: float):
 		judge_tween.tween_property(judge_score, "modulate:a", 0, 0.1)
 	return judgetype
 
+@onready var tint_shader: Shader = preload("res://shaders/tint.gdshader")
+
 func remove_note_and_add_to_arc(note: Dictionary, result: int, roll: bool = false, roll_type: int = 1):
 	var dr = cur_chart.note_draw_data.find(note)
 	var type: int = note["note"]
@@ -244,9 +249,12 @@ func remove_note_and_add_to_arc(note: Dictionary, result: int, roll: bool = fals
 		if $Notes.note_sprites[type] != null and soul_curve.get_child_count() < 32 and result != JudgeType.BAD:
 			var spr: Sprite2D = Sprite2D.new()
 			spr.texture = $Notes.note_sprites[type]
+			spr.material = ShaderMaterial.new()
+			spr.material.shader = tint_shader
+			spr.material.set_shader_parameter("color", Color.WHITE)
 			if roll:
 				spr.texture = $Notes.note_sprites[roll_type]
-			if type == 3 or type == 4:
+			if (type == 3 or type == 4):
 				var dai_effect: AnimatedSprite2D = AnimatedSprite2D.new()
 				dai_effect.sprite_frames = dai_frames
 				dai_effect.play(str(result))
@@ -260,8 +268,16 @@ func remove_note_and_add_to_arc(note: Dictionary, result: int, roll: bool = fals
 			pathfind.rotates = false
 			var ptween = pathfind.create_tween()
 			ptween.tween_property(pathfind, "progress_ratio", 1.0, 0.5)
+			ptween.tween_method(func(val):
+				spr.material.set_shader_parameter("mixture", val)
+			, 0.0, 1.0, 0.3)
+			ptween.set_parallel(true)
 			ptween.tween_callback(spawn_gauge_effect)
-			ptween.tween_interval(0.3)
+			ptween.set_parallel(false)
+			ptween.tween_interval(0.1)
+			ptween.tween_method(func(val):
+				spr.material.set_shader_parameter("alpha", val)
+			, 1.0, 0.0, 0.2)
 			ptween.tween_callback(pathfind.queue_free)
 			soul_curve.add_child(pathfind)
 			if not roll:
@@ -324,35 +340,20 @@ func auto_play():
 
 func handle_input():
 	if autoplay: return
-	if Input.is_action_just_pressed("don_left") or Input.is_action_just_pressed("don_right"):
+	if (Input.is_action_just_pressed("don_left") or Input.is_action_just_pressed("don_right")) and not rolling:
 		var hit = check_note(1)
 		if Input.is_action_just_pressed("don_left"):
 			taiko.taiko_input(0, 0, hit)
 		if Input.is_action_just_pressed("don_right"):
 			taiko.taiko_input(0, 1, hit)
-	if Input.is_action_just_pressed("ka_left") or Input.is_action_just_pressed("ka_right"):
+	if (Input.is_action_just_pressed("ka_left") or Input.is_action_just_pressed("ka_right")) and not rolling:
 		var hit = check_note(2)
 		if Input.is_action_just_pressed("ka_left"):
 			taiko.taiko_input(1, 0, hit)
 		if Input.is_action_just_pressed("ka_right"):
 			taiko.taiko_input(1, 1, hit)
-	if (Input.is_action_just_pressed("don_left") or Input.is_action_just_pressed("don_right")) and \
-	(Input.is_action_just_pressed("ka_left") or Input.is_action_just_pressed("ka_right")):
-		if rolling and not last_roll_note.is_empty():
-			if last_roll_note["note"] == 5:
-				var dummy_type: int = 1
-				if (Input.is_action_just_pressed("ka_left") or Input.is_action_just_pressed("ka_right")):
-					dummy_type = 2
-				remove_note_and_add_to_arc(last_roll_note, JudgeType.GREAT, false, dummy_type)
-				handle_score_animation(ScoreManager.calc_roll(score, 2, gogo_time_active))
-			elif last_roll_note["note"] == 6:
-				var dummy_type: int = 3
-				if (Input.is_action_just_pressed("ka_left") or Input.is_action_just_pressed("ka_right")):
-					dummy_type = 4
-				remove_note_and_add_to_arc(last_roll_note, JudgeType.GREAT, false, dummy_type)
-				handle_score_animation(ScoreManager.calc_roll(score, 3, gogo_time_active))
-			if last_roll_note["roll_color_mod"] != Color.RED:
-				last_roll_note["roll_color_mod"] *= Color.RED*0.25
+	if ((Input.is_action_just_pressed("don_left") or Input.is_action_just_pressed("don_right")) and \
+	(Input.is_action_just_pressed("ka_left") or Input.is_action_just_pressed("ka_right"))) and not rolling:
 		var hit = check_note(10)
 		if Input.is_action_just_pressed("don_left"):
 			taiko.taiko_input(0, 0, hit)
@@ -362,6 +363,34 @@ func handle_input():
 			taiko.taiko_input(1, 0, hit)
 		if Input.is_action_just_pressed("ka_right"):
 			taiko.taiko_input(1, 1, hit)
+	if (Input.is_action_just_pressed("don_left") or Input.is_action_just_pressed("don_right")) or \
+	(Input.is_action_just_pressed("ka_left") or Input.is_action_just_pressed("ka_right")):
+		if rolling and not last_roll_note.is_empty():
+			if Input.is_action_just_pressed("don_left"):
+				taiko.taiko_input(0, 0, true, true)
+			if Input.is_action_just_pressed("don_right"):
+				taiko.taiko_input(0, 1, true, true)
+			if Input.is_action_just_pressed("ka_left"):
+				taiko.taiko_input(1, 0, true, true)
+			if Input.is_action_just_pressed("ka_right"):
+				taiko.taiko_input(1, 1, true, true)
+			if last_roll_note["roll_note_type"] == 5:
+				var dummy_type: int = 1
+				if (Input.is_action_just_pressed("ka_left") or Input.is_action_just_pressed("ka_right")):
+					dummy_type = 2
+				remove_note_and_add_to_arc(last_roll_note, JudgeType.GREAT, true, dummy_type)
+				handle_score_animation(ScoreManager.calc_roll(score, 2, gogo_time_active))
+			elif last_roll_note["roll_note_type"] == 6:
+				var dummy_type: int = 3
+				if (Input.is_action_just_pressed("ka_left") or Input.is_action_just_pressed("ka_right")):
+					dummy_type = 4
+				remove_note_and_add_to_arc(last_roll_note, JudgeType.GREAT, true, dummy_type)
+				handle_score_animation(ScoreManager.calc_roll(score, 3, gogo_time_active))
+			if last_roll_note["roll_color_mod"] != Color.RED:
+				last_roll_note["roll_color_mod"].r = lerpf(1, Color.RED.r, 0.25*roll_mmm)
+				last_roll_note["roll_color_mod"].g = lerpf(1, Color.RED.g, 0.25*roll_mmm)
+				last_roll_note["roll_color_mod"].b = lerpf(1, Color.RED.b, 0.25*roll_mmm)
+			roll_mmm += 1
 	var fucked: PackedInt64Array
 	# Check for unpressed lmao
 	for i in range(0, min(current_note_list.size(), 512)):
@@ -442,6 +471,7 @@ func handle_play_events():
 		match type:
 			ChartData.CommandType.BPMCHANGE:
 				current_bpm = event["val1"]
+				$RhythmNotifier.bpm = current_bpm
 			ChartData.CommandType.SPEED:
 				var tween = create_tween()
 				tween.set_ease(Tween.EASE_IN_OUT)

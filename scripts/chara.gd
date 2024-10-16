@@ -8,6 +8,7 @@ var curbpm: float = 0.0
 var last_beat: float = 0
 var last_late_beat: float = 0
 @export var idle_frames: int = 1
+@export var rhythm_notifier: RhythmNotifier
 var song_pos: float = 0.0
 
 var state: int = 0
@@ -17,37 +18,43 @@ var last_tween: Tween
 
 var did_10combo_tween: bool = false
 
+func each_half_beat(_count):
+	if state != 0: return
+	hframes = idle_frames
+	texture = idle_sprite
+	did_10combo_tween = false
+	frame = wrapi(frame+1, 0, idle_frames)
+
+func each_beat(_count):
+	if state != 1: return
+	hframes = 4
+	texture = gogo_sprite
+	match gogo_beat:
+		0:
+			frame = 0
+		1:
+			frame = 2
+	gogo_beat = wrap(gogo_beat+1, 0, 2)
+
+func each_beat_offset(_count):
+	if state != 1: return
+	hframes = 4
+	texture = gogo_sprite
+	match gogo2_beat:
+		0:
+			frame = 1
+		1:
+			frame = 3
+	gogo2_beat = wrap(gogo2_beat+1, 0, 2)
+
+func _ready() -> void:
+	rhythm_notifier.beat.connect(each_beat)
+	rhythm_notifier.beats(0.5).connect(each_half_beat)
+	rhythm_notifier.beats(1, true, -0.1).connect(each_beat_offset)
+
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
 	match state:
-		0:
-			hframes = idle_frames
-			texture = idle_sprite
-			did_10combo_tween = false
-			if song_pos > last_beat + (30 / curbpm):
-				frame = wrapi(frame+1, 0, idle_frames)
-				last_beat = song_pos
-		1: # gogotime
-			if is_instance_valid(last_tween):
-				last_tween.stop()
-				position.y = 61
-			hframes = 4
-			texture = gogo_sprite
-			if (song_pos + 0.020) > last_late_beat + (60 / curbpm):
-				match gogo_beat:
-					0:
-						frame = 1
-					1:
-						frame = 3
-			if song_pos > last_late_beat + (60 / curbpm):
-				match gogo2_beat:
-					0:
-						frame = 0
-					1:
-						frame = 2
-				gogo2_beat = wrap(gogo2_beat+1, 0, 2)
-				gogo_beat = wrap(gogo_beat+1, 0, 2)
-				last_late_beat = song_pos
 		2: # 10 combo
 			hframes = 1
 			texture = combo_sprite

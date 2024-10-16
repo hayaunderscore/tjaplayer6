@@ -31,15 +31,19 @@ func _ready() -> void:
 	for i in don:
 		i.modulate.a = 0
 
-func taiko_input(type: int, side: int, hit: bool):
-	sfield[type].modulate.a = 0.5
-	sfield_delay[type] = 0.1+0.016
-	sfield[absi(type-1)].modulate.a = 0.0
-	sfield_delay[absi(type-1)] = 0.0
+func taiko_input(type: int, side: int, hit: bool, only_hit: bool = false):
+	if not only_hit:
+		sfield[type].modulate.a = 0.5
+		sfield_delay[type] = 0.1+0.016
+		sfield[absi(type-1)].modulate.a = 0.0
+		sfield_delay[absi(type-1)] = 0.0
 	# Also display the yellow sfield effect when hitting
-	if hit:
+	if only_hit:
 		sfield[2].modulate.a = 0.5
-		sfield_delay[2] = 0.0
+		sfield_delay[2] = 0.1
+	elif hit:
+		sfield[2].modulate.a = 1.0
+		sfield_delay[2] = 0.1
 	match type:
 		TaikoType.KAT:
 			ka[side].modulate.a = 1.0

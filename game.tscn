@@ -1,4 +1,4 @@
-[gd_scene load_steps=38 format=3 uid="uid://cqrjctcrfhnv"]
+[gd_scene load_steps=39 format=3 uid="uid://cqrjctcrfhnv"]
 
 [ext_resource type="Script" path="res://game.gd" id="1_kakou"]
 [ext_resource type="AudioStream" uid="uid://2mhf4s1a821v" path="res://snd/dong.wav" id="2_3pvjb"]
@@ -34,6 +34,7 @@
 [ext_resource type="AudioStream" uid="uid://c4f1pkkmu48ew" path="res://snd/difficulty_select.ogg" id="32_xjkad"]
 [ext_resource type="FontVariation" uid="uid://bt3je228fbhus" path="res://gfx/number/score.tres" id="33_b2gsf"]
 [ext_resource type="Script" path="res://scripts/score_drawer.gd" id="34_reb8p"]
+[ext_resource type="Script" path="res://addons/rhythm_notifier/rhythm_notifier.gd" id="35_3k01j"]
 
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_2cfb4"]
 blend_mode = 2
@@ -239,7 +240,7 @@ texture = ExtResource("24_rnslj")
 modulate = Color(1, 1, 1, 0)
 texture = ExtResource("25_ldv62")
 
-[node name="Chara" type="Sprite2D" parent="."]
+[node name="Chara" type="Sprite2D" parent="." node_paths=PackedStringArray("rhythm_notifier")]
 z_index = -2048
 position = Vector2(86, 61)
 texture = ExtResource("22_vk86d")
@@ -249,6 +250,7 @@ idle_sprite = ExtResource("22_vk86d")
 gogo_sprite = ExtResource("20_5ys4s")
 combo_sprite = ExtResource("20_4hic0")
 idle_frames = 2
+rhythm_notifier = NodePath("../RhythmNotifier")
 
 [node name="Soulgauge" type="Sprite2D" parent="."]
 z_index = -1
@@ -390,11 +392,15 @@ theme_override_fonts/font = ExtResource("33_b2gsf")
 text = "0"
 horizontal_alignment = 2
 
+[node name="ScoreDrawer" type="Node2D" parent="."]
+position = Vector2(612, 112)
+script = ExtResource("34_reb8p")
+
 [node name="AddScores" type="Node2D" parent="."]
 
-[node name="ScoreDrawer" type="Node2D" parent="."]
-position = Vector2(592, 94)
-script = ExtResource("34_reb8p")
+[node name="RhythmNotifier" type="Node" parent="." node_paths=PackedStringArray("audio_stream_player")]
+script = ExtResource("35_3k01j")
+audio_stream_player = NodePath("../AudioStreamPlayer")
 
 [connection signal="timeout" from="Timer" to="." method="preamble_timeout"]
 [connection signal="pressed" from="Diffilcut/MarginContainer/VBoxContainer/Easy" to="." method="_on_easy_pressed"]
