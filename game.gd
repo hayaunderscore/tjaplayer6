@@ -295,7 +295,7 @@ func auto_play():
 	auto_roll()
 	# It really is that shrimple
 	if current_note_list.size() <= 0: return
-	while current_note_list[0]["time"] < elapsed:
+	while current_note_list.size() > 0 and current_note_list[0]["time"] < elapsed:
 		var note: Dictionary = current_note_list.pop_front()
 		# Look, we can't detect if we should hit if we don't have one.
 		if not note.has("time"): continue
