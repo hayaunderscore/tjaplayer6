@@ -35,6 +35,7 @@ func each_beat(_count):
 		1:
 			frame = 2
 	gogo_beat = wrap(gogo_beat+1, 0, 2)
+	gogo2_beat = wrap(gogo2_beat+1, 0, 2)
 
 func each_beat_offset(_count):
 	if state != 1: return
@@ -45,12 +46,12 @@ func each_beat_offset(_count):
 			frame = 1
 		1:
 			frame = 3
-	gogo2_beat = wrap(gogo2_beat+1, 0, 2)
+	#gogo2_beat = wrap(gogo2_beat+1, 0, 2)
 
 func _ready() -> void:
 	rhythm_notifier.beat.connect(each_beat)
 	rhythm_notifier.beats(0.5).connect(each_half_beat)
-	rhythm_notifier.beats(1, true, -0.1).connect(each_beat_offset)
+	rhythm_notifier.beats(1, true, -0.025).connect(each_beat_offset)
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
