@@ -38,7 +38,7 @@ func _ready() -> void:
 	get_viewport().get_window().files_dropped.connect(on_drop)
 	if OS.has_feature("android"):
 		autoplay = true
-		on_drop(["res://charts/soflan-chan_short.tja"])
+		on_drop(["res://charts/soflan-chan_full_measurefix.tja"])
 
 var draw_data_offset: int = 0
 

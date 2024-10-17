@@ -148,7 +148,7 @@ func _draw() -> void:
 	
 	draw_set_transform(Vector2.ZERO)
 	
-	for i in range(min(draw_list.size()-1, 1024)+draw_data_offset, -1+draw_data_offset, -1):
+	for i in range(min(draw_list.size()-1,512)+draw_data_offset, -1+draw_data_offset, -1):
 		if not draw_list.has(i): continue
 		var note: Dictionary = draw_list[i]
 		if note["note"] >= 999: continue
