@@ -1,7 +1,8 @@
 extends Node2D
 class_name NoteDrawer
 
-var draw_list: Array[Dictionary]
+var draw_list: Dictionary
+var draw_data_offset: int = 0
 var bar_list: Array[Dictionary]
 var time: float = 0.0
 
@@ -147,7 +148,8 @@ func _draw() -> void:
 	
 	draw_set_transform(Vector2.ZERO)
 	
-	for i in range(min(draw_list.size()-1, 512), -1, -1):
+	for i in range(min(draw_list.size()-1, 1024)+draw_data_offset, -1+draw_data_offset, -1):
+		if not draw_list.has(i): continue
 		var note: Dictionary = draw_list[i]
 		if note["note"] >= 999: continue
 		var col: Color = Color.WHITE

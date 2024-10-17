@@ -12,6 +12,7 @@ var last_late_beat: float = 0
 var song_pos: float = 0.0
 
 var state: int = 0
+var beat: int = 0
 var gogo_beat: int = 0
 var gogo2_beat: int = 0
 var last_tween: Tween
@@ -23,7 +24,7 @@ func each_half_beat(_count):
 	hframes = idle_frames
 	texture = idle_sprite
 	did_10combo_tween = false
-	frame = wrapi(frame+1, 0, idle_frames)
+	beat = wrapi(beat+1, 0, idle_frames)
 
 func each_beat(_count):
 	if state != 1: return
@@ -56,6 +57,13 @@ func _ready() -> void:
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
 	match state:
+		0:
+			hframes = idle_frames
+			texture = idle_sprite
+			frame = beat
+		1:
+			hframes = 4
+			texture = gogo_sprite
 		2: # 10 combo
 			hframes = 1
 			texture = combo_sprite

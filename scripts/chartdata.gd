@@ -60,5 +60,6 @@ var command_log: Array[Dictionary]
 var bpm_log: Array[Dictionary]
 var positive_delay_log: Array[Dictionary]
 # Draw data
-var note_draw_data: Array[Dictionary]
+var note_draw_data: Array[Dictionary] # Phased out in favor of below
+var draw_data: Dictionary
 var barline_data: Array[Dictionary]

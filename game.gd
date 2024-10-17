@@ -40,8 +40,11 @@ func _ready() -> void:
 		autoplay = true
 		on_drop(["res://charts/soflan-chan_short.tja"])
 
+var draw_data_offset: int = 0
+
 func on_drop(path: PackedStringArray):
 	cur_chart = null
+	draw_data_offset = 0
 	don_chan.last_beat = 0
 	don_chan.last_late_beat = 0
 	don_chan.state = 0
@@ -177,14 +180,14 @@ func handle_score_animation(addscore: int):
 	addlabel.set("theme_override_fonts/font", score_text.get("theme_override_fonts/font"))
 	addlabel.set("theme_override_colors/font_color", Color.ORANGE_RED)
 	addlabel.horizontal_alignment = score_text.horizontal_alignment
-	addlabel.global_position = base_position + Vector2(-8, -32)
+	addlabel.global_position = base_position + Vector2(-32, -28)
 	addlabel.text = str(addscore-oldscore)
 	addlabel.size = score_text.size
 	addlabel.modulate.a = 0
 	$AddScores.add_child(addlabel)
 	tween.set_parallel(true)
-	tween.tween_property(addlabel, "modulate:a", 1, 0.2).set_trans(Tween.TRANS_EXPO)
-	tween.tween_property(addlabel, "position:x", base_position.x, 0.25).set_trans(Tween.TRANS_EXPO)
+	tween.tween_property(addlabel, "modulate:a", 1, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(addlabel, "position:x", base_position.x, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.set_parallel(false)
 	tween.tween_interval(0.15)
 	tween.set_parallel(true)
@@ -242,16 +245,18 @@ func hit_note(type: int, time: float):
 
 @onready var tint_shader: Shader = preload("res://shaders/tint.gdshader")
 
+
 func remove_note_and_add_to_arc(note: Dictionary, result: int, roll: bool = false, roll_type: int = 1):
-	var dr = cur_chart.note_draw_data.find(note)
+	# Need to find a way to cache this somehow
+	var dr = cur_chart.draw_data.find_key(note)
 	var type: int = note["note"]
-	if dr != -1: 
+	if dr != null: 
 		if $Notes.note_sprites[type] != null and soul_curve.get_child_count() < 32 and result != JudgeType.BAD:
 			var spr: Sprite2D = Sprite2D.new()
 			spr.texture = $Notes.note_sprites[type]
 			spr.material = ShaderMaterial.new()
 			spr.material.shader = tint_shader
-			spr.material.set_shader_parameter("color", Color.WHITE)
+			spr.material.set_shader_parameter("color", Color(2.0, 2.0, 1.0, 1.0))
 			if roll:
 				spr.texture = $Notes.note_sprites[roll_type]
 			if (type == 3 or type == 4):
@@ -288,15 +293,16 @@ func remove_note_and_add_to_arc(note: Dictionary, result: int, roll: bool = fals
 				note_boom.judge = result
 				add_child(note_boom)
 		if not roll:
-			cur_chart.note_draw_data.remove_at(dr)
+			draw_data_offset += 1
+			cur_chart.draw_data.erase(dr)
 	
 func auto_play():
 	if not autoplay: return
 	auto_roll()
 	# It really is that shrimple
 	if current_note_list.size() <= 0: return
-	while current_note_list.size() > 0 and current_note_list[0]["time"] < elapsed:
-		var note: Dictionary = current_note_list.pop_front()
+	while current_note_list.size() > 0 and current_note_list[-1]["time"] < elapsed:
+		var note: Dictionary = current_note_list.pop_back()
 		# Look, we can't detect if we should hit if we don't have one.
 		if not note.has("time"): continue
 		if note.has("dummy"): continue
@@ -320,7 +326,7 @@ func auto_play():
 				taiko.taiko_input(1, 0, true)
 				taiko.taiko_input(1, 1, true)
 			5, 6:
-				last_roll_note = cur_chart.note_draw_data[cur_chart.note_draw_data.find(note)+1]
+				last_roll_note = cur_chart.draw_data[cur_chart.draw_data.find_key(note)+1]
 				rolling = true
 				roll_timer = 0
 				roll_mmm = 0
@@ -408,7 +414,7 @@ func handle_input():
 		if (type == 5 or type == 6) and time < elapsed:
 			rolling = true
 			roll_mmm = 0
-			last_roll_note = cur_chart.note_draw_data[cur_chart.note_draw_data.find(note)+1]
+			last_roll_note = cur_chart.draw_data[cur_chart.draw_data.find_key(note)+1]
 		if type == 8 and time < elapsed:
 			rolling = false
 			last_roll_note = {}
@@ -562,6 +568,9 @@ func _physics_process(delta: float) -> void:
 	handle_play_events()
 	handle_input()
 	
+	# Handle auto-play (enabled by default...)
+	auto_play()
+	
 	last_current_beat = current_beat
 	current_beat = TJA.calculate_beat_from_ms(elapsed, cur_chart.bpm_log)
 	$CurrentBeatLabel.text = "Current beat: %.3f\nCurrent time: %.3f" % [current_beat, elapsed]
@@ -574,16 +583,14 @@ func _physics_process(delta: float) -> void:
 	don_chan.song_pos = elapsed + preamble.wait_time
 	
 	# TODO
-	notes.draw_list = cur_chart.note_draw_data
+	notes.draw_data_offset = draw_data_offset
+	notes.draw_list = cur_chart.draw_data
 	notes.bar_list = cur_chart.barline_data
 	notes.cur_bpm = current_bpm
 	notes.time = elapsed
 	notes.current_beat = current_beat
 	notes.bemani_scroll = cur_chart.bemani_scroll
 	notes.combo_anim = (combo >= 50)
-	
-	# Handle auto-play (enabled by default...)
-	auto_play()
 	
 	# Soul curves
 	#for child in soul_curve.get_children():

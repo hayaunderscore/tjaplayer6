@@ -123,20 +123,20 @@ func get_se_note(note_list: Array[Dictionary], measure_ms: float, note: Dictiona
 	else:
 		note["senote"] = se_notes[note["note"]]
 
-func merge_sort(cards: Array[Dictionary]) -> Array[Dictionary]:
+func merge_sort(cards: Array[Dictionary], fun: Callable) -> Array[Dictionary]:
 	if cards.size() <= 1:
 		return cards
 	var mid = cards.size() / 2
-	var left = merge_sort(cards.slice(0, mid))
-	var right = merge_sort(cards.slice(mid, cards.size()))
-	return merge(left, right)
+	var left = merge_sort(cards.slice(0, mid), fun)
+	var right = merge_sort(cards.slice(mid, cards.size()), fun)
+	return merge(left, right, fun)
 
-func merge(left: Array[Dictionary], right: Array[Dictionary]) -> Array[Dictionary]:
+func merge(left: Array[Dictionary], right: Array[Dictionary], fun: Callable) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	var i = 0
 	var j = 0
 	while i < left.size() and j < right.size():
-		if left[i]["time"] < right[j]["time"]:
+		if fun.call(left[i], right[j]):
 			result.append(left[i])
 			i += 1
 		else:
@@ -347,11 +347,12 @@ func parse_tja(path: String):
 			for note in cur_chart.barline_data:
 				note["beat_position"] = calculate_beat_from_ms(note["time"] - note["negative_delay"], cur_chart.bpm_log)
 			var sorted: Array[Dictionary] = cur_chart.notes.duplicate(true)
+			# Clone note data to draw data
 			sorted = sorted.filter(func(a): return a["note"] < 999)
-			# sorted.sort_custom(func(a, b): a["time"] < b["time"])
-			cur_chart.note_draw_data = sorted.duplicate(true)
-			print(cur_chart.notes.size())
-			var m: Array[Dictionary] = merge_sort(cur_chart.notes)
+			for i in range(0, sorted.size()):
+				cur_chart.draw_data[i] = sorted[i]
+			# Sort all entries by time
+			var m: Array[Dictionary] = merge_sort(cur_chart.notes, func(a, b): a["time"] < b["time"])
 			cur_chart.notes = m
 			cur_chart.bemani_scroll = bemani_scroll
 			cur_chart.disable_scroll = disable_scroll
