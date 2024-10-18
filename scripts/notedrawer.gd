@@ -148,9 +148,11 @@ func _draw() -> void:
 	
 	draw_set_transform(Vector2.ZERO)
 	
-	for i in range(min(draw_list.size()-1,512)+draw_data_offset, -1+draw_data_offset, -1):
-		if not draw_list.has(i): continue
-		var note: Dictionary = draw_list[i]
+	var arr = draw_list.keys()
+	if arr.size() <= 0: return
+	for i in range(min(arr.size()-1,512), -1, -1):
+		#if not draw_list.has(i): continue
+		var note: Dictionary = draw_list[arr[i]]
 		if note["note"] >= 999: continue
 		var col: Color = Color.WHITE
 		var note_scale: Vector2 = Vector2(1, 1)

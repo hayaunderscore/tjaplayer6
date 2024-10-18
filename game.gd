@@ -247,8 +247,7 @@ func hit_note(type: int, time: float):
 
 
 func remove_note_and_add_to_arc(note: Dictionary, result: int, roll: bool = false, roll_type: int = 1):
-	# Need to find a way to cache this somehow
-	var dr = cur_chart.draw_data.find_key(note)
+	var dr = note.get("cached_index", cur_chart.draw_data.find_key(note))
 	var type: int = note["note"]
 	if dr != null: 
 		if $Notes.note_sprites[type] != null and soul_curve.get_child_count() < 32 and result != JudgeType.BAD:
@@ -326,7 +325,7 @@ func auto_play():
 				taiko.taiko_input(1, 0, true)
 				taiko.taiko_input(1, 1, true)
 			5, 6:
-				last_roll_note = cur_chart.draw_data[cur_chart.draw_data.find_key(note)+1]
+				last_roll_note = cur_chart.draw_data[note["roll_tail"]]
 				rolling = true
 				roll_timer = 0
 				roll_mmm = 0

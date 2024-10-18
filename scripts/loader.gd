@@ -348,8 +348,9 @@ func parse_tja(path: String):
 				note["beat_position"] = calculate_beat_from_ms(note["time"] - note["negative_delay"], cur_chart.bpm_log)
 			var sorted: Array[Dictionary] = cur_chart.notes.duplicate(true)
 			# Clone note data to draw data
-			sorted = sorted.filter(func(a): return a["note"] < 999)
+			# sorted = sorted.filter(func(a): return a["note"] < 999)
 			for i in range(0, sorted.size()):
+				cur_chart.notes[i]["cached_index"] = i
 				cur_chart.draw_data[i] = sorted[i]
 			# Sort all entries by time
 			var m: Array[Dictionary] = merge_sort(cur_chart.notes, func(a, b): a["time"] < b["time"])
@@ -587,6 +588,7 @@ func parse_tja(path: String):
 									time - (screen_distance / ppf_vec.y / 60)
 								))
 								cur_chart.notes[rnoteidx]["roll_color_mod"] = Color.WHITE
+								cur_note["roll_tail"] = cur_chart.notes.size()
 								last_note = cur_chart.notes[rnoteidx]
 								
 							cur_note = no
