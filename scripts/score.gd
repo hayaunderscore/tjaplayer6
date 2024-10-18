@@ -28,8 +28,8 @@ var score_calc: Dictionary = {
 			return floorf((score + init * RATING_MULTIPLIER[mini(judge, 2)] * (GOGO_MULTIPLIER if gogo else 1)) / 10) * 10,
 	],
 	Drumroll = [
-		func(score, notetype, gogo): return score + ((300 if notetype == 3 else 600) * (GOGO_MULTIPLIER if gogo else 1)),
-		func(score, notetype, gogo): return score + ((300 if notetype == 3 else 600) * (GOGO_MULTIPLIER if gogo else 1)),
+		func(score, notetype, gogo): return score + ((600 if notetype == 3 else 300) * (GOGO_MULTIPLIER if gogo else 1)),
+		func(score, notetype, gogo): return score + ((600 if notetype == 3 else 300) * (GOGO_MULTIPLIER if gogo else 1)),
 		func(score, notetype, gogo): return score + ((200 if notetype == 3 else 100) * (GOGO_MULTIPLIER if gogo else 1)),
 		func(score, notetype, gogo): return score + (200 * (GOGO_MULTIPLIER if gogo else 1))
 	],
