@@ -402,6 +402,8 @@ script = ExtResource("34_reb8p")
 script = ExtResource("35_3k01j")
 audio_stream_player = NodePath("../AudioStreamPlayer")
 
+[node name="LuaStage" type="Node2D" parent="."]
+
 [connection signal="timeout" from="Timer" to="." method="preamble_timeout"]
 [connection signal="pressed" from="Diffilcut/MarginContainer/VBoxContainer/Easy" to="." method="_on_easy_pressed"]
 [connection signal="pressed" from="Diffilcut/MarginContainer/VBoxContainer/Normal" to="." method="_on_normal_pressed"]

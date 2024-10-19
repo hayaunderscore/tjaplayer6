@@ -120,7 +120,7 @@ class _Rhythm:
 	var beat_count: float
 	var start_beat: float
 	var last_frame_interval
-	
+	var offset: float
 
 	func _init(_repeating, _beat_count, _start_beat):
 		repeating = _repeating
@@ -132,8 +132,8 @@ class _Rhythm:
 	# We pass secs_per_beat so user can change bpm any time
 	func emit_if_needed(position: float, secs_per_beat: float) -> void:
 		var interval_secs = beat_count * secs_per_beat
-		var current_interval = int(floor((position - start_beat) / interval_secs))
-		var secs_past_interval = fmod(position - start_beat, interval_secs)
+		var current_interval = int(floor((position - start_beat + offset) / interval_secs))
+		var secs_past_interval = fmod(position - start_beat + offset, interval_secs)
 		var valid_interval = current_interval > 0 and (repeating or current_interval == 1)
 		var too_late = secs_past_interval >= TOO_LATE
 		if not valid_interval or too_late:
@@ -185,6 +185,8 @@ signal beat(current_beat: int)
 			return  # Can't override
 		_silent_running = val
 		_position = 0.0
+
+@export var offset: float
 
 ## The current beat, indexed from [code]0[/code].
 var current_beat: int:
@@ -272,6 +274,7 @@ func beats(beat_count: float, repeating := true, start_beat := 0.0) -> Signal:
 			and rhythm.start_beat == start_beat):
 			return rhythm.interval_changed
 	var new_rhythm = _Rhythm.new(repeating, beat_count, start_beat)
+	new_rhythm.offset = offset
 	_rhythms.append(new_rhythm)
 	return new_rhythm.interval_changed
 	

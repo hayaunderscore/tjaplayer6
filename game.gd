@@ -34,11 +34,19 @@ var current_beat: float = 0.0
 var score: int = 0
 @onready var score_text: Label = $Score
 
+var lua_state: LuaState
+var lua_update_hooks: Dictionary
+var lua_draw_hooks: Dictionary
+
+var _uuid = preload("res://scripts/utils/uuid.gd")
+
 func _ready() -> void:
 	get_viewport().get_window().files_dropped.connect(on_drop)
 	if OS.has_feature("android"):
 		autoplay = true
 		on_drop(["res://charts/soflan-chan_full_measurefix.tja"])
+	lua_state = LuaState.new()
+	lua_state.open_libraries()
 
 var draw_data_offset: int = 0
 
@@ -73,7 +81,7 @@ func find_chart_and_play(diff: int):
 	# autoplay = false
 	current_bpm = cur_tja.start_bpm
 	$RhythmNotifier.bpm = current_bpm
-	$RhythmNotifier.running = true
+	$RhythmNotifier.offset = cur_tja.offset
 	current_note_list.clear()
 	current_note_list = cur_chart.notes
 	elapsed = 0
@@ -187,7 +195,7 @@ func handle_score_animation(addscore: int):
 	$AddScores.add_child(addlabel)
 	tween.set_parallel(true)
 	tween.tween_property(addlabel, "modulate:a", 1, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tween.tween_property(addlabel, "position:x", base_position.x, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(addlabel, "position:x", base_position.x, 0.25).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tween.set_parallel(false)
 	tween.tween_interval(0.15)
 	tween.set_parallel(true)
@@ -272,16 +280,16 @@ func remove_note_and_add_to_arc(note: Dictionary, result: int, roll: bool = fals
 			pathfind.rotates = false
 			var ptween = pathfind.create_tween()
 			ptween.tween_property(pathfind, "progress_ratio", 1.0, 0.5)
-			ptween.tween_method(func(val):
+			ptween.tween_interval(0.5)
+			ptween.parallel().tween_method(func(val):
 				spr.material.set_shader_parameter("mixture", val)
 			, 0.0, 1.0, 0.3)
 			ptween.set_parallel(true)
 			ptween.tween_callback(spawn_gauge_effect)
 			ptween.set_parallel(false)
-			ptween.tween_interval(0.1)
-			ptween.tween_method(func(val):
-				spr.material.set_shader_parameter("alpha", val)
-			, 1.0, 0.0, 0.2)
+			ptween.parallel().tween_method(func(val):
+				spr.material.set_shader_parameter("alpha", min(1.0, val))
+			, 2.0, 0.0, 0.4)
 			ptween.tween_callback(pathfind.queue_free)
 			soul_curve.add_child(pathfind)
 			if not roll:
@@ -399,49 +407,44 @@ func handle_input():
 				last_roll_note["roll_color_mod"].g = lerpf(1, Color.RED.g, 0.25*roll_mmm)
 				last_roll_note["roll_color_mod"].b = lerpf(1, Color.RED.b, 0.25*roll_mmm)
 			roll_mmm += 1
-	var fucked: PackedInt64Array
-	# Check for unpressed lmao
-	for i in range(0, min(current_note_list.size(), 512)):
-		var note: Dictionary = current_note_list[i]
+	if current_note_list.size() <= 0: return
+	while current_note_list.size() > 0 and current_note_list[-1]["time"] < elapsed:
+		var note: Dictionary = current_note_list[-1]
 		# Look, we can't detect if we should hit if we don't have one.
-		if not note.has("time"): continue
-		if note.has("dummy"): continue
+		if not note.has("time"): break
+		if note.has("dummy"): break
 		var type: int = note["note"]
 		var time: float = note["time"]
 		# Do not include special notes from now on.
-		if type >= 999: continue
-		if (type == 5 or type == 6) and time < elapsed:
-			rolling = true
-			roll_mmm = 0
-			last_roll_note = cur_chart.draw_data[cur_chart.draw_data.find_key(note)+1]
-		if type == 8 and time < elapsed:
-			rolling = false
-			last_roll_note = {}
-		if time > elapsed - JUDGEMENT_BAD: continue
+		if type >= 999: break
+		match type:
+			5, 6:
+				last_roll_note = cur_chart.draw_data[note["roll_tail"]]
+				rolling = true
+				roll_timer = 0
+				roll_mmm = 0
+				current_note_list.pop_back()
+				break
+			8: 
+				rolling = false
+				current_note_list.pop_back()
+				break
+		if time > elapsed - JUDGEMENT_BAD: break
 		var result = hit_note(type, time)
-		if result == JudgeType.INVALID: continue
-		# These two are fundamentally the same
-		fucked.append(i)
-		if result == JudgeType.ROLL: continue
+		if result == JudgeType.INVALID: break
+		current_note_list.pop_back()
+		if result == JudgeType.ROLL: break
 		remove_note_and_add_to_arc(note, result)
-	# Remove offending notes
-	if fucked.size() > 0:
-		for fuck in fucked:
-			current_note_list.remove_at(fuck)
 
 func check_note(check_type: int):
 	var hit: bool = false
-	var fucked: PackedInt64Array
-	for i in range(0, min(current_note_list.size(), 512)):
-		var note: Dictionary = current_note_list[i]
-		# Look, we can't detect if we should hit if we don't have one.
-		if not note.has("time"): continue
-		if note.has("dummy"): continue
+	if current_note_list.size() <= 0: return false
+	var offset: int = 0
+	while current_note_list.size() > 0 and not (current_note_list[-1-offset]["time"] > elapsed + JUDGEMENT_BAD):
+		print(offset)
+		var note: Dictionary = current_note_list[-1-offset]
 		var type: int = note["note"]
 		var time: float = note["time"]
-		# Do not include special notes from now on.
-		if type >= 999: continue
-		if time > elapsed + JUDGEMENT_BAD: continue
 		var old_type: int = type
 		match check_type:
 			1:
@@ -450,20 +453,21 @@ func check_note(check_type: int):
 			2:
 				if type == 4:
 					type = 2
-		if type != check_type: continue
+		if type != check_type: 
+			offset += 1
+			continue
 		var result = hit_note(type, time)
 		type = old_type
-		if result == JudgeType.INVALID: continue
-		# These two are fundamentally the same
-		fucked.append(i)
-		if result == JudgeType.ROLL: continue
+		if result == JudgeType.INVALID: 
+			offset += 1
+			continue
+		current_note_list.pop_back()
+		if result == JudgeType.ROLL: 
+			offset += 1
+			continue
 		remove_note_and_add_to_arc(note, result)
 		hit = true
 		break
-	# Remove offending notes
-	if fucked.size() > 0:
-		for fuck in fucked:
-			current_note_list.remove_at(fuck)
 	return hit
 
 var gogo_time_active: bool = false

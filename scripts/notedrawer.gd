@@ -183,16 +183,16 @@ func _draw() -> void:
 					var roll_body: Vector2 = roll_region_positions[last_note["note"]][0]
 					var roll_tail: Vector2 = roll_region_positions[last_note["note"]][1]
 					# Draw tail body
-					var rect = Rect2(-Vector2(0, 40), Vector2(dist-40, 80)).abs()
+					var rect = Rect2(-Vector2(0, 40), Vector2(dist, 80)).abs()
 					draw_texture_rect_region(note_sprite, rect, Rect2(roll_body, Vector2(80, 80)), col)
 					# Draw tail end
-					rect = Rect2(Vector2(dist-40, -40), Vector2(80, 80)).abs()
+					rect = Rect2(Vector2(dist, -40), Vector2(80, 80)).abs()
 					draw_texture_rect_region(note_sprite, rect, Rect2(roll_tail, Vector2(80, 80)), col)
 					# Draw se note
 					var se_pos: float = -36
 					if last_pos.angle_to_point(pos) > PI/2:
 						se_pos = 70
-					rect = Rect2(-Vector2(-20, se_pos), Vector2(dist-40, roll_se.get_height())).abs()
+					rect = Rect2(-Vector2(-20, se_pos), Vector2(dist, roll_se.get_height())).abs()
 					draw_texture_rect(roll_se, rect, true, Color.WHITE)
 					# Reset when done >:(
 					draw_set_transform(Vector2.ZERO)

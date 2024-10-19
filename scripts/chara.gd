@@ -50,7 +50,7 @@ func each_beat_offset(_count):
 	#gogo2_beat = wrap(gogo2_beat+1, 0, 2)
 
 func _ready() -> void:
-	rhythm_notifier.beat.connect(each_beat)
+	rhythm_notifier.beats(1).connect(each_beat)
 	rhythm_notifier.beats(0.5).connect(each_half_beat)
 	rhythm_notifier.beats(1, true, -0.025).connect(each_beat_offset)
 

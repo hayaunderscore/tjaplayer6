@@ -352,6 +352,7 @@ func parse_tja(path: String):
 			for i in range(0, sorted.size()):
 				cur_chart.notes[i]["cached_index"] = i
 				cur_chart.draw_data[i] = sorted[i]
+			cur_chart.notes = cur_chart.notes.filter(func(a): return not a.has("dummy"))
 			# Sort all entries by time
 			var m: Array[Dictionary] = merge_sort(cur_chart.notes, func(a, b): a["time"] < b["time"])
 			cur_chart.notes = m
