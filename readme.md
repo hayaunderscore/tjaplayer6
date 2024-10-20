@@ -16,13 +16,15 @@ Does not use DTXMania as a base.
 - Complex y-scroll, with roll support
 - BMS scroll via `#BMSCROLL` and `#HBSCROLL`
 - Playability (with scoring)
+- [Lua scripting](docs/lua.md)
+- [Custom commands](docs/commands.md)
 
 # What doesn't
 
 - Branches
 - Commands TJAP2fPC/TJAP3 specific (`#SUDDEN`, `#JPOSSCROLL`)
   - All quirks from those are also not replicated (such as `#DELAY` not having a stop effect on BMS scroll)
-  - TJAP2fPC's y-scroll flipping behavior is currently present, however.
+  - TJAP2fPC's y-scroll flipping behavior is currently present, however. (?)
 - Song select
 - Results screen
 - Soul gauge
