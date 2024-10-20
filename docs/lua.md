@@ -17,7 +17,7 @@ Specific functions exist to add elements to the "stage".
 
 Adds a `Node` object to the stage. Removed on song change.
 
-```
+```lua
 -- Note that functions use : instead of . !
 local node = Node:new()
 add_to_stage(node)
@@ -28,7 +28,7 @@ add_to_stage(node)
 Creates and returns a `Sprite2D` object with a texture specified by a path. <br>
 The path specified is relative to the lua script's path.
 
-```
+```lua
 local sprite = create_sprite("fuck.png")
 -- If the path to the image doesn't exist it simply doesn't make the image.
 add_to_stage(sprite)
