@@ -275,6 +275,7 @@ func parse_tja(path: String):
 					tjaf.alttitle = _find_value(line, "TITLEJA:", "")
 				tjaf.subtitle = _find_value(line, "SUBTITLE:", tjaf.subtitle)
 				tjaf.maker = _find_value(line, "MAKER:", tjaf.maker)
+				tjaf.bgchanges = _find_value(line, "BGCHANGES:", tjaf.bgchanges)
 				tjaf.demo_start = float(_find_value(line, "DEMOSTART:", str(tjaf.demo_start)))
 				tjaf.head_scroll = float(_find_value(line, "HEADSCROLL:", str(tjaf.head_scroll)))
 				tjaf.start_bpm = float(_find_value(line, "BPM:", str(tjaf.start_bpm)))
@@ -312,7 +313,6 @@ func parse_tja(path: String):
 					level = int(_find_value(line, "LEVEL:", str(level)))
 				if line.begins_with("SCOREMODE:"):
 					scoremode = int(_find_value(line, "SCOREMODE:", str(scoremode)))
-					print(scoremode)
 				if line.begins_with("SCOREINIT:"):
 					var val = _find_value(line, "SCOREINIT:").split_floats(",", false)
 					if val.size() > 0:
@@ -323,14 +323,12 @@ func parse_tja(path: String):
 						scoreinit[1] = int(val[1])
 					else:
 						scoreinit[1] = 1000
-					print(scoreinit)
 				if line.begins_with("SCOREDIFF:"):
 					var val = _find_value(line, "SCOREDIFF:", str(scorediff))
 					if not val.is_empty():
 						scorediff = int(val)
 					else:
 						scorediff = 120
-					print(scorediff)
 				if line.begins_with("BALLOON:"):
 					balloons = _find_value(line, "BALLOON:").split_floats(",")
 			continue

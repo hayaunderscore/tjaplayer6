@@ -13,8 +13,6 @@ var cur_chart: ChartData
 @onready var taiko: TaikoDrum = $Taiko
 @onready var voice: AudioStreamPlayer = $Voice
 
-@onready var rhythm_notifier: RhythmNotifier = $RhythmNotifier
-
 var current_bpm: float = 0.0
 var current_meter: float = 4.0
 var current_scroll: Vector2 = Vector2.ZERO
@@ -47,16 +45,33 @@ func _ready() -> void:
 		on_drop(["res://charts/soflan-chan_full_measurefix.tja"])
 	lua_state = LuaState.new()
 	lua_state.open_libraries()
+	var g: LuaTable = lua_state.globals
+	g["add_to_stage"] = func(node):
+		$LuaStage.add_child(node)
+	g["create_sprite"] = func(path):
+		var spr: Sprite2D = Sprite2D.new()
+		spr.texture = ImageTexture.create_from_image(Image.load_from_file(g["lua_path"] + path))
+		return spr
 
 var draw_data_offset: int = 0
+var valid_lua: bool = false
 
 func on_drop(path: PackedStringArray):
+	if valid_lua:
+		for child in $LuaStage.get_children():
+			child.queue_free()
+	valid_lua = false
 	cur_chart = null
 	draw_data_offset = 0
 	don_chan.last_beat = 0
 	don_chan.last_late_beat = 0
 	don_chan.state = 0
 	cur_tja = TJA.parse_tja(path[0])
+	cur_tja.bgchanges = path[0].get_base_dir() + "/" + cur_tja.bgchanges
+	if FileAccess.file_exists(cur_tja.bgchanges):
+		lua_state.globals["lua_path"] = path[0].get_base_dir() + "/"
+		lua_state.do_file(cur_tja.bgchanges)
+		valid_lua = true
 	if cur_tja.chartinfo.size() == 0:
 		print("No chart detected! Abort!")
 		return
@@ -68,6 +83,10 @@ func on_drop(path: PackedStringArray):
 	$Intro.visible = false
 	$Diffilcut.visible = true
 
+func toggle_debug_info():
+	$Intro.visible = !$Intro.visible
+	$CurrentBeatLabel.visible = $Intro.visible
+
 func find_chart_and_play(diff: int):
 	for chart in cur_tja.chartinfo:
 		if chart.course == diff:
@@ -77,11 +96,8 @@ func find_chart_and_play(diff: int):
 	ScoreManager.score_mode = cur_chart.scoremode
 	ScoreManager.score_init = cur_chart.scoreinit[0]
 	ScoreManager.score_diff = cur_chart.scorediff
-	print(ScoreManager.calc_max_score_and_combo(cur_chart.notes))
 	# autoplay = false
 	current_bpm = cur_tja.start_bpm
-	$RhythmNotifier.bpm = current_bpm
-	$RhythmNotifier.offset = cur_tja.offset
 	current_note_list.clear()
 	current_note_list = cur_chart.notes
 	elapsed = 0
@@ -441,7 +457,6 @@ func check_note(check_type: int):
 	if current_note_list.size() <= 0: return false
 	var offset: int = 0
 	while current_note_list.size() > 0 and not (current_note_list[-1-offset]["time"] > elapsed + JUDGEMENT_BAD):
-		print(offset)
 		var note: Dictionary = current_note_list[-1-offset]
 		var type: int = note["note"]
 		var time: float = note["time"]
@@ -483,7 +498,7 @@ func handle_play_events():
 		match type:
 			ChartData.CommandType.BPMCHANGE:
 				current_bpm = event["val1"]
-				$RhythmNotifier.bpm = current_bpm
+
 			ChartData.CommandType.SPEED:
 				var tween = create_tween()
 				tween.set_ease(Tween.EASE_IN_OUT)
@@ -561,6 +576,9 @@ func _physics_process(delta: float) -> void:
 		autoplay = !autoplay
 		$Autoplay.visible = autoplay
 	
+	if Input.is_action_just_pressed("debug_info"):
+		toggle_debug_info()
+	
 	if not cur_chart: return
 	elapsed = audio.get_playback_position() + AudioServer.get_time_since_last_mix()
 	# Compensate for output latency.
@@ -581,7 +599,7 @@ func _physics_process(delta: float) -> void:
 	$CourseSymbol/HitEffect.modulate.a = max(0, $CourseSymbol/HitEffect.modulate.a-delta*3)
 	
 	# DON CHAN #
-	don_chan.curbpm = max(0, current_bpm)
+	don_chan.curbpm = abs(current_bpm)
 	# Negative values cause don-chan to not bop at the beginning
 	don_chan.song_pos = elapsed + preamble.wait_time
 	
@@ -594,6 +612,14 @@ func _physics_process(delta: float) -> void:
 	notes.current_beat = current_beat
 	notes.bemani_scroll = cur_chart.bemani_scroll
 	notes.combo_anim = (combo >= 50)
+	
+	BeatManager.current_beat = current_beat
+	BeatManager.negative_beat = sign(current_bpm) == -1
+	
+	if valid_lua:
+		var f = lua_state.globals.get_value("update")
+		if f != null:
+			f.invoke(current_beat, elapsed)
 	
 	# Soul curves
 	#for child in soul_curve.get_children():

@@ -1,4 +1,4 @@
-[gd_scene load_steps=39 format=3 uid="uid://cqrjctcrfhnv"]
+[gd_scene load_steps=38 format=3 uid="uid://cqrjctcrfhnv"]
 
 [ext_resource type="Script" path="res://game.gd" id="1_kakou"]
 [ext_resource type="AudioStream" uid="uid://2mhf4s1a821v" path="res://snd/dong.wav" id="2_3pvjb"]
@@ -34,7 +34,6 @@
 [ext_resource type="AudioStream" uid="uid://c4f1pkkmu48ew" path="res://snd/difficulty_select.ogg" id="32_xjkad"]
 [ext_resource type="FontVariation" uid="uid://bt3je228fbhus" path="res://gfx/number/score.tres" id="33_b2gsf"]
 [ext_resource type="Script" path="res://scripts/score_drawer.gd" id="34_reb8p"]
-[ext_resource type="Script" path="res://addons/rhythm_notifier/rhythm_notifier.gd" id="35_3k01j"]
 
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_2cfb4"]
 blend_mode = 2
@@ -74,6 +73,8 @@ autoscroll = Vector2(-32, 0)
 texture = ExtResource("5_rj1pq")
 centered = false
 
+[node name="LuaStage" type="Node2D" parent="."]
+
 [node name="GogoEffect" type="Sprite2D" parent="."]
 modulate = Color(1, 1, 1, 0)
 z_index = -2048
@@ -103,21 +104,21 @@ anchor_right = -0.013
 anchor_bottom = -0.136
 offset_top = 222.0
 offset_right = 640.0
-offset_bottom = 252.0
+offset_bottom = 248.0
 color = Color(0, 0, 0, 1)
 metadata/_edit_group_ = true
 
 [node name="Title" type="Label" parent="ColorRect"]
 layout_mode = 1
-anchors_preset = 6
+anchors_preset = -1
 anchor_left = 1.0
-anchor_top = 0.5
+anchor_top = 0.462
 anchor_right = 1.0
-anchor_bottom = 0.5
+anchor_bottom = 0.462
 offset_left = -752.0
-offset_top = -13.0
+offset_top = -12.012
 offset_right = -12.0
-offset_bottom = 11.0
+offset_bottom = 11.988
 grow_horizontal = 0
 grow_vertical = 2
 pivot_offset = Vector2(388, 12)
@@ -240,7 +241,7 @@ texture = ExtResource("24_rnslj")
 modulate = Color(1, 1, 1, 0)
 texture = ExtResource("25_ldv62")
 
-[node name="Chara" type="Sprite2D" parent="." node_paths=PackedStringArray("rhythm_notifier")]
+[node name="Chara" type="Sprite2D" parent="."]
 z_index = -2048
 position = Vector2(86, 61)
 texture = ExtResource("22_vk86d")
@@ -250,7 +251,6 @@ idle_sprite = ExtResource("22_vk86d")
 gogo_sprite = ExtResource("20_5ys4s")
 combo_sprite = ExtResource("20_4hic0")
 idle_frames = 2
-rhythm_notifier = NodePath("../RhythmNotifier")
 
 [node name="Soulgauge" type="Sprite2D" parent="."]
 z_index = -1
@@ -397,12 +397,6 @@ position = Vector2(612, 112)
 script = ExtResource("34_reb8p")
 
 [node name="AddScores" type="Node2D" parent="."]
-
-[node name="RhythmNotifier" type="Node" parent="." node_paths=PackedStringArray("audio_stream_player")]
-script = ExtResource("35_3k01j")
-audio_stream_player = NodePath("../AudioStreamPlayer")
-
-[node name="LuaStage" type="Node2D" parent="."]
 
 [connection signal="timeout" from="Timer" to="." method="preamble_timeout"]
 [connection signal="pressed" from="Diffilcut/MarginContainer/VBoxContainer/Easy" to="." method="_on_easy_pressed"]

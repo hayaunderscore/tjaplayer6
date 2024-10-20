@@ -8,6 +8,7 @@ var subtitle: String
 var maker: String
 var demo_start: float = 0.0
 var head_scroll: float = 1.0
+var bgchanges: String
 
 ## TIMING
 var start_bpm: float = 120.0
