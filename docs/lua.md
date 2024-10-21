@@ -11,25 +11,23 @@ BGCHANGES:fuuuuuck_i_hate_it.lua
 Currently, you have full access to every singleton and utility function Godot has, including the OS singleton.
 This may change to prevent malicious code from running.
 
-Specific functions exist to add elements to the "stage".
+Specific functions exist to add elements to the "stage", accessible via the `tp6` library.
 
-## `add_to_stage`
+## `tp6.add_to_stage`
 
 Adds a `Node` object to the stage. Removed on song change.
 
 ```lua
--- Note that functions use : instead of . !
-local node = Node:new()
-add_to_stage(node)
+tp6.add_to_stage(node)
 ```
 
-## `create_sprite`
+## `tp6.create_sprite`
 
 Creates and returns a `Sprite2D` object with a texture specified by a path. <br>
 The path specified is relative to the lua script's path.
 
 ```lua
-local sprite = create_sprite("fuck.png")
+local sprite = tp6.create_sprite("fuck.png")
 -- If the path to the image doesn't exist it simply doesn't make the image.
-add_to_stage(sprite)
+tp6.add_to_stage(sprite)
 ```

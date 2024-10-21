@@ -32,26 +32,39 @@ var current_beat: float = 0.0
 var score: int = 0
 @onready var score_text: Label = $Score
 
-var lua_state: LuaState
-var lua_update_hooks: Dictionary
-var lua_draw_hooks: Dictionary
+var lua: LuaAPI
+
+class TPApi:
+	var _stage: Node2D
+	var _path: String
+	func __newindex(ref: LuaAPI, index, value):
+		return LuaError.new_error("Error: Ah ah uh! You can't edit this library!")
+	func add_to_stage(node):
+		_stage.add_child(node)
+	func create_sprite(path: String, x: float = 0, y: float = 0):
+		var spr: Sprite2D = Sprite2D.new()
+		spr.global_position = Vector2(x, y)
+		spr.texture = ImageTexture.create_from_image(Image.load_from_file(_path + path))
+		return spr
 
 var _uuid = preload("res://scripts/utils/uuid.gd")
+var tpapi: TPApi
 
 func _ready() -> void:
 	get_viewport().get_window().files_dropped.connect(on_drop)
 	if OS.has_feature("android"):
 		autoplay = true
 		on_drop(["res://charts/soflan-chan_full_measurefix.tja"])
-	lua_state = LuaState.new()
-	lua_state.open_libraries()
-	var g: LuaTable = lua_state.globals
-	g["add_to_stage"] = func(node):
-		$LuaStage.add_child(node)
-	g["create_sprite"] = func(path):
-		var spr: Sprite2D = Sprite2D.new()
-		spr.texture = ImageTexture.create_from_image(Image.load_from_file(g["lua_path"] + path))
-		return spr
+	lua = LuaAPI.new()
+	lua.bind_libraries(["base", "table", "string", "math", "io", "package", "utf8"])
+	tpapi = TPApi.new()
+	tpapi._stage = $LuaStage
+	lua.push_variant("tp6", tpapi)
+	#lua_state = LuaState.new()
+	#lua_state.open_libraries()
+	#var g: LuaTable = lua_state.globals
+	#g["add_to_stage"] = func(node):
+		#$LuaStage.add_child(node)
 
 var draw_data_offset: int = 0
 var valid_lua: bool = false
@@ -69,8 +82,9 @@ func on_drop(path: PackedStringArray):
 	cur_tja = TJA.parse_tja(path[0])
 	cur_tja.bgchanges = path[0].get_base_dir() + "/" + cur_tja.bgchanges
 	if FileAccess.file_exists(cur_tja.bgchanges):
-		lua_state.globals["lua_path"] = path[0].get_base_dir() + "/"
-		lua_state.do_file(cur_tja.bgchanges)
+		#lua_state.globals["lua_path"] = path[0].get_base_dir() + "/"
+		tpapi._path = path[0].get_base_dir() + "/"
+		lua.do_file(cur_tja.bgchanges)
 		valid_lua = true
 	if cur_tja.chartinfo.size() == 0:
 		print("No chart detected! Abort!")
@@ -82,6 +96,10 @@ func on_drop(path: PackedStringArray):
 	score_text.text = "0"
 	$Intro.visible = false
 	$Diffilcut.visible = true
+
+func _exit_tree() -> void:
+	# To prevent a stinky SIGSEGV on exit (ugh)
+	lua.unreference()
 
 func toggle_debug_info():
 	$Intro.visible = !$Intro.visible
@@ -616,10 +634,9 @@ func _physics_process(delta: float) -> void:
 	BeatManager.current_beat = current_beat
 	BeatManager.negative_beat = sign(current_bpm) == -1
 	
-	if valid_lua:
-		var f = lua_state.globals.get_value("update")
-		if f != null:
-			f.invoke(current_beat, elapsed)
+	if valid_lua and is_instance_valid(lua):
+		if lua.function_exists("update"):
+			lua.call_function("update", [current_beat, elapsed])
 	
 	# Soul curves
 	#for child in soul_curve.get_children():
